@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Find Vendors | VendorVibe</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background-color: #EBFCFF;
+      color: #1A0C6A;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 40px;
+      background-color: #EBFCFF;
+      border-bottom: 1px solid #d9eef2;
+    }
+
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+      color: #1A0C6A;
+    }
+
+    .nav-links a {
+      margin-left: 20px;
+      text-decoration: none;
+      color: #1A0C6A;
+      font-weight: 500;
+    }
+
+    .nav-links a:hover {
+      text-decoration: underline;
+    }
+
+    .page-header {
+      text-align: center;
+      padding: 60px 20px 30px;
+    }
+
+    .page-header h1 {
+      font-size: 48px;
+      margin-bottom: 10px;
+    }
+
+    .page-header p {
+      font-size: 20px;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .vendor-grid {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      padding: 40px 20px 80px;
+    }
+
+    .vendor-card {
+      background-color: white;
+      width: 280px;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+      text-align: left;
+    }
+
+    .vendor-card h2 {
+      font-size: 24px;
+      margin-top: 0;
+      color: #1A0C6A;
+    }
+
+    .vendor-card p {
+      font-size: 16px;
+      line-height: 1.5;
+      color: #1A0C6A;
+    }
+
+    .tag {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 8px 12px;
+      background-color: #EBFCFF;
+      border: 1px solid #1A0C6A;
+      border-radius: 20px;
+      font-size: 14px;
+      color: #1A0C6A;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 30px 20px;
+      background-color: #1A0C6A;
+      color: white;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="logo">VendorVibe</div>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="vendors.html">Find Vendors</a>
+      <a href="signup.html">For Vendors</a>
+      <a href="#">Login</a>
+    </div>
+  </nav>
+
+  <section class="page-header">
+    <h1>Find Vendors</h1>
+    <p>Explore vendors for weddings, corporate events, festivals, and unforgettable experiences.</p>
+  </section>
+
+  <section class="vendor-grid">
+    <div class="vendor-card">
+      <h2>Bluebird Events</h2>
+      <p>Full-service event planning for elegant weddings and private celebrations.</p>
+      <div class="tag">Wedding Planning</div>
+    </div>
+
+    <div class="vendor-card">
+      <h2>North Stage Collective</h2>
+      <p>Production and coordination support for music festivals and large-scale live events.</p>
+      <div class="tag">Festival Production</div>
+    </div>
+
+    <div class="vendor-card">
+      <h2>Elevate Corporate</h2>
+      <p>Professional planning services for conferences, networking events, and branded experiences.</p>
+      <div class="tag">Corporate Events</div>
+    </div>
+  </section>
+
+  <div class="footer">
+    <p>VendorVibe © 2026</p>
+  </div>
+
+</body>
+</html>
