@@ -151,20 +151,20 @@
   </section>
 
   <section class="filter-bar">
-    <input type="text" placeholder="Search vendors or services">
-    <select>
-      <option>All Categories</option>
-      <option>Event Planning</option>
-      <option>Photography</option>
-      <option>Catering</option>
-      <option>Entertainment</option>
-      <option>Production</option>
-      <option>Decor & Design</option>
+    <input type="text" id="searchInput" placeholder="Search vendors or services">
+    <select id="categoryFilter">
+      <option value="all">All Categories</option>
+      <option value="event planning">Event Planning</option>
+      <option value="photography">Photography</option>
+      <option value="catering">Catering</option>
+      <option value="entertainment">Entertainment</option>
+      <option value="production">Production</option>
+      <option value="corporate events">Corporate Events</option>
     </select>
   </section>
 
   <section class="vendor-grid">
-    <div class="vendor-card">
+    <div class="vendor-card" data-category="event planning">
       <img src="https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=900&q=80" alt="Elegant event setup">
       <div class="vendor-card-content">
         <h2>Bluebird Events</h2>
@@ -173,7 +173,7 @@
       </div>
     </div>
 
-    <div class="vendor-card">
+    <div class="vendor-card" data-category="production">
       <img src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=900&q=80" alt="Festival crowd">
       <div class="vendor-card-content">
         <h2>North Stage Collective</h2>
@@ -182,7 +182,7 @@
       </div>
     </div>
 
-    <div class="vendor-card">
+    <div class="vendor-card" data-category="corporate events">
       <img src="https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=900&q=80" alt="Corporate event">
       <div class="vendor-card-content">
         <h2>Elevate Corporate</h2>
@@ -191,7 +191,7 @@
       </div>
     </div>
 
-    <div class="vendor-card">
+    <div class="vendor-card" data-category="photography">
       <img src="https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=900&q=80" alt="Photographer at event">
       <div class="vendor-card-content">
         <h2>Golden Hour Media</h2>
@@ -200,7 +200,7 @@
       </div>
     </div>
 
-    <div class="vendor-card">
+    <div class="vendor-card" data-category="catering">
       <img src="https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=900&q=80" alt="Food catering setup">
       <div class="vendor-card-content">
         <h2>Harvest Table Catering</h2>
@@ -209,7 +209,7 @@
       </div>
     </div>
 
-    <div class="vendor-card">
+    <div class="vendor-card" data-category="entertainment">
       <img src="https://images.unsplash.com/photo-1505236858219-8359eb29e329?auto=format&fit=crop&w=900&q=80" alt="Live entertainment">
       <div class="vendor-card-content">
         <h2>Pulse Entertainment</h2>
@@ -222,6 +222,37 @@
   <div class="footer">
     <p>VendorVibe © 2026</p>
   </div>
+
+  <script>
+    const categoryFilter = document.getElementById("categoryFilter");
+    const searchInput = document.getElementById("searchInput");
+    const vendorCards = document.querySelectorAll(".vendor-card");
+
+    function filterVendors() {
+      const selectedCategory = categoryFilter.value.toLowerCase();
+      const searchText = searchInput.value.toLowerCase();
+
+      vendorCards.forEach(card => {
+        const category = card.getAttribute("data-category").toLowerCase();
+        const cardText = card.innerText.toLowerCase();
+
+        const matchesCategory =
+          selectedCategory === "all" || category === selectedCategory;
+
+        const matchesSearch =
+          cardText.includes(searchText);
+
+        if (matchesCategory && matchesSearch) {
+          card.style.display = "block";
+        } else {
+          card.style.display = "none";
+        }
+      });
+    }
+
+    categoryFilter.addEventListener("change", filterVendors);
+    searchInput.addEventListener("input", filterVendors);
+  </script>
 
 </body>
 </html>
