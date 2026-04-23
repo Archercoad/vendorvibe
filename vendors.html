@@ -79,6 +79,12 @@
       padding: 30px 20px 80px;
     }
 
+    .vendor-link {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+
     .vendor-card {
       background-color: white;
       width: 300px;
@@ -86,6 +92,12 @@
       overflow: hidden;
       box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
       text-align: left;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .vendor-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
     }
 
     .vendor-card img {
@@ -164,65 +176,71 @@
   </section>
 
   <section class="vendor-grid">
-    <a href="bluebird-events.html" style="text-decoration: none; color: inherit;">
-  <div class="vendor-card" data-category="event planning">
-    <img src="https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=900&q=80" alt="Elegant event setup">
-    <div class="vendor-card-content">
-      <h2>Bluebird Events</h2>
-      <p>Full-service planning for weddings, private celebrations, and refined event experiences.</p>
-      <div class="tag">Event Planning</div>
-    </div>
-  </div>
-</a>
+    <a href="bluebird-events.html" class="vendor-link">
+      <div class="vendor-card" data-category="event planning">
+        <img src="https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=900&q=80" alt="Elegant event setup">
+        <div class="vendor-card-content">
+          <h2>Bluebird Events</h2>
+          <p>Full-service planning for weddings, private celebrations, and refined event experiences.</p>
+          <div class="tag">Event Planning</div>
+        </div>
+      </div>
+    </a>
 
     <a href="north-stage.html" class="vendor-link">
-  <div class="vendor-card" data-category="production">
-    <img src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=900&q=80" alt="Festival crowd">
-    <div class="vendor-card-content">
-      <h2>North Stage Collective</h2>
-      <p>Production and coordination support for music festivals and large-scale live events.</p>
-      <div class="tag">Production</div>
-    </div>
-  </div>
-</a> 
-
-    <div class="vendor-card" data-category="corporate events">
-      <img src="https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=900&q=80" alt="Corporate event">
-      <div class="vendor-card-content">
-        <h2>Elevate Corporate</h2>
-        <p>Professional planning services for conferences, networking events, and branded experiences.</p>
-        <div class="tag">Corporate Events</div>
+      <div class="vendor-card" data-category="production">
+        <img src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=900&q=80" alt="Festival crowd">
+        <div class="vendor-card-content">
+          <h2>North Stage Collective</h2>
+          <p>Production and coordination support for music festivals and large-scale live events.</p>
+          <div class="tag">Production</div>
+        </div>
       </div>
-    </div>
+    </a>
+
+    <a href="elevate-corporate.html" class="vendor-link">
+      <div class="vendor-card" data-category="corporate events">
+        <img src="https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=900&q=80" alt="Corporate event">
+        <div class="vendor-card-content">
+          <h2>Elevate Corporate</h2>
+          <p>Professional planning services for conferences, networking events, and branded experiences.</p>
+          <div class="tag">Corporate Events</div>
+        </div>
+      </div>
+    </a>
 
     <a href="golden-hour.html" class="vendor-link">
-  <div class="vendor-card" data-category="photography">
-    <img src="https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=900&q=80" alt="Photographer at event">
-    <div class="vendor-card-content">
-      <h2>Golden Hour Media</h2>
-      <p>Photography and visual storytelling for weddings, brand launches, and special events.</p>
-      <div class="tag">Photography</div>
-    </div>
-  </div>
-</a>     
-
-    <div class="vendor-card" data-category="catering">
-      <img src="https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=900&q=80" alt="Food catering setup">
-      <div class="vendor-card-content">
-        <h2>Harvest Table Catering</h2>
-        <p>Beautiful, crowd-pleasing menus for intimate celebrations, galas, and corporate functions.</p>
-        <div class="tag">Catering</div>
+      <div class="vendor-card" data-category="photography">
+        <img src="https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=900&q=80" alt="Photographer at event">
+        <div class="vendor-card-content">
+          <h2>Golden Hour Media</h2>
+          <p>Photography and visual storytelling for weddings, brand launches, and special events.</p>
+          <div class="tag">Photography</div>
+        </div>
       </div>
-    </div>
+    </a>
 
-    <div class="vendor-card" data-category="entertainment">
-      <img src="https://images.unsplash.com/photo-1505236858219-8359eb29e329?auto=format&fit=crop&w=900&q=80" alt="Live entertainment">
-      <div class="vendor-card-content">
-        <h2>Pulse Entertainment</h2>
-        <p>DJs, live music, and energy-driven entertainment for parties, weddings, and festivals.</p>
-        <div class="tag">Entertainment</div>
+    <a href="harvest-table.html" class="vendor-link">
+      <div class="vendor-card" data-category="catering">
+        <img src="https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=900&q=80" alt="Food catering setup">
+        <div class="vendor-card-content">
+          <h2>Harvest Table Catering</h2>
+          <p>Beautiful, crowd-pleasing menus for intimate celebrations, galas, and corporate functions.</p>
+          <div class="tag">Catering</div>
+        </div>
       </div>
-    </div>
+    </a>
+
+    <a href="pulse-entertainment.html" class="vendor-link">
+      <div class="vendor-card" data-category="entertainment">
+        <img src="https://images.unsplash.com/photo-1505236858219-8359eb29e329?auto=format&fit=crop&w=900&q=80" alt="Live entertainment">
+        <div class="vendor-card-content">
+          <h2>Pulse Entertainment</h2>
+          <p>DJs, live music, and energy-driven entertainment for parties, weddings, and festivals.</p>
+          <div class="tag">Entertainment</div>
+        </div>
+      </div>
+    </a>
   </section>
 
   <div class="footer">
@@ -233,25 +251,25 @@
     const categoryFilter = document.getElementById("categoryFilter");
     const searchInput = document.getElementById("searchInput");
     const vendorCards = document.querySelectorAll(".vendor-card");
+    const vendorLinks = document.querySelectorAll(".vendor-link");
 
     function filterVendors() {
       const selectedCategory = categoryFilter.value.toLowerCase();
       const searchText = searchInput.value.toLowerCase();
 
-      vendorCards.forEach(card => {
+      vendorCards.forEach((card, index) => {
         const category = card.getAttribute("data-category").toLowerCase();
         const cardText = card.innerText.toLowerCase();
 
         const matchesCategory =
           selectedCategory === "all" || category === selectedCategory;
 
-        const matchesSearch =
-          cardText.includes(searchText);
+        const matchesSearch = cardText.includes(searchText);
 
         if (matchesCategory && matchesSearch) {
-          card.style.display = "block";
+          vendorLinks[index].style.display = "block";
         } else {
-          card.style.display = "none";
+          vendorLinks[index].style.display = "none";
         }
       });
     }
@@ -262,4 +280,3 @@
 
 </body>
 </html>
-
