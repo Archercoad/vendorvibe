@@ -167,82 +167,33 @@
     <p>VendorVibe © 2026</p>
   </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
 <script>
-const vendors = {
-  bluebird: {
-    name: "Bluebird Events",
-    tag: "Event Planning",
-    image: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3",
-    description: "Full-service planning for weddings and private events.",
-    about: "Bluebird Events specializes in elegant, curated experiences for weddings and private celebrations.",
-    events: "Weddings, private events, luxury celebrations",
-    services: "Full planning, coordination, vendor management"
-  },
+const supabase = supabase.createClient(
+  "https://zvoarlanqjlezqzmgwhe.supabase.co",
+  "PASTE_YOUR_PUBLISHABLE_KEY_HERE"
+);
 
-  north: {
-    name: "North Stage Collective",
-    tag: "Production",
-    image: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30",
-    description: "Production support for festivals and large events.",
-    about: "North Stage Collective supports large-scale events with logistics and production expertise.",
-    events: "Festivals, concerts, public events",
-    services: "Stage production, logistics, coordination"
-  },
+async function loadVendor() {
+  const { data, error } = await supabase
+    .from("vendors")
+    .select("*")
+    .eq("name", "Bluebird Events")
+    .single();
 
-  golden: {
-    name: "Golden Hour Media",
-    tag: "Photography",
-    image: "https://images.unsplash.com/photo-1520854221256-17451cc331bf",
-    description: "Photography for weddings, brands, and events.",
-    about: "Golden Hour Media captures emotional, natural event photography.",
-    events: "Weddings, corporate events, branding",
-    services: "Photography, editing, galleries"
-  },
-
-  elevate: {
-    name: "Elevate Corporate",
-    tag: "Corporate Events",
-    image: "https://images.unsplash.com/photo-1511578314322-379afb476865",
-    description: "Professional corporate event planning.",
-    about: "Elevate Corporate creates polished business events.",
-    events: "Conferences, networking, corporate",
-    services: "Planning, logistics, coordination"
-  },
-
-  harvest: {
-    name: "Harvest Table Catering",
-    tag: "Catering",
-    image: "https://images.unsplash.com/photo-1555244162-803834f70033",
-    description: "Beautiful menus for events.",
-    about: "Harvest Table delivers elevated catering experiences.",
-    events: "Weddings, dinners, corporate",
-    services: "Catering, menu design"
-  },
-
-  pulse: {
-    name: "Pulse Entertainment",
-    tag: "Entertainment",
-    image: "https://images.unsplash.com/photo-1505236858219-8359eb29e329",
-    description: "DJs and live entertainment.",
-    about: "Pulse Entertainment brings energy to every event.",
-    events: "Parties, weddings, festivals",
-    services: "DJ, music, entertainment"
+  if (data) {
+    document.getElementById("vendorName").textContent = data.name;
+    document.getElementById("vendorTag").textContent = data.category;
+    document.getElementById("vendorImage").src = data.image;
+    document.getElementById("vendorDescription").textContent = data.description;
+    document.getElementById("vendorAbout").textContent = data.description;
+    document.getElementById("vendorEvents").textContent = data.category;
+    document.getElementById("vendorServices").textContent = "Full service";
   }
-};
-
-const params = new URLSearchParams(window.location.search);
-const id = params.get("id");
-const v = vendors[id];
-
-if (v) {
-  document.getElementById("vendorName").textContent = v.name;
-  document.getElementById("vendorTag").textContent = v.tag;
-  document.getElementById("vendorImage").src = v.image;
-  document.getElementById("vendorDescription").textContent = v.description;
-  document.getElementById("vendorAbout").textContent = v.about;
-  document.getElementById("vendorEvents").textContent = v.events;
-  document.getElementById("vendorServices").textContent = v.services;
 }
+
+loadVendor();
 </script>
 
 </body>
