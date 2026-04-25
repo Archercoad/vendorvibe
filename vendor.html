@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Vendor Profile | VendorVibe</title>
+
+  <style>
+    body { font-family: Arial; margin: 0; background: #EBFCFF; color: #1A0C6A; }
+    .navbar { display:flex; justify-content:space-between; padding:20px 40px; border-bottom:1px solid #ddd;}
+    .nav-links a { margin-left:20px; text-decoration:none; color:#1A0C6A;}
+
+    .profile {
+      max-width: 900px;
+      margin: 50px auto;
+      padding: 20px;
+    }
+
+    img {
+      width: 100%;
+      border-radius: 12px;
+      margin-bottom: 20px;
+    }
+
+    h1 { font-size: 40px; }
+    p { font-size: 18px; line-height: 1.6; }
+
+    .tag {
+      padding: 8px 12px;
+      border: 1px solid #1A0C6A;
+      border-radius: 20px;
+      display: inline-block;
+      margin-bottom: 15px;
+    }
+  </style>
+</head>
+
+<body>
+
+<nav class="navbar">
+  <div>VendorVibe</div>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="vendors.html">Find Vendors</a>
+    <a href="signup.html">For Vendors</a>
+  </div>
+</nav>
+
+<div class="profile">
+  <img id="vendorImage">
+  <div class="tag" id="vendorTag"></div>
+  <h1 id="vendorName"></h1>
+  <p id="vendorDescription"></p>
+</div>
+
+<script>
+const vendors = {
+  bluebird: {
+    name: "Bluebird Events",
+    tag: "Event Planning",
+    image: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3",
+    description: "Full-service planning for weddings and private events."
+  },
+  north: {
+    name: "North Stage Collective",
+    tag: "Production",
+    image: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30",
+    description: "Production support for festivals and large events."
+  },
+  golden: {
+    name: "Golden Hour Media",
+    tag: "Photography",
+    image: "https://images.unsplash.com/photo-1520854221256-17451cc331bf",
+    description: "Photography for weddings, brands, and events."
+  }
+};
+
+const params = new URLSearchParams(window.location.search);
+const vendorId = params.get("id");
+
+const vendor = vendors[vendorId];
+
+if (vendor) {
+  document.getElementById("vendorName").textContent = vendor.name;
+  document.getElementById("vendorTag").textContent = vendor.tag;
+  document.getElementById("vendorImage").src = vendor.image;
+  document.getElementById("vendorDescription").textContent = vendor.description;
+}
+</script>
+
+</body>
+</html>
