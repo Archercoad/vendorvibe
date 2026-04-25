@@ -170,17 +170,22 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
 <script>
-const supabase = supabase.createClient(
+const supabaseClient = window.supabase.createClient(
   "https://zvoarlanqjlezqzmgwhe.supabase.co",
   "sb_publishable_8p6mMcu2YImc5doJhMpIaA_oA1yBYu9"
 );
 
 async function loadVendor() {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from("vendors")
     .select("*")
     .eq("name", "Bluebird Events")
     .single();
+
+  if (error) {
+    console.log("Supabase error:", error);
+    return;
+  }
 
   if (data) {
     document.getElementById("vendorName").textContent = data.name;
@@ -189,7 +194,7 @@ async function loadVendor() {
     document.getElementById("vendorDescription").textContent = data.description;
     document.getElementById("vendorAbout").textContent = data.description;
     document.getElementById("vendorEvents").textContent = data.category;
-    document.getElementById("vendorServices").textContent = "Full service";
+    document.getElementById("vendorServices").textContent = "Full-service event planning";
   }
 }
 
