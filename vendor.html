@@ -176,10 +176,23 @@ const supabaseClient = window.supabase.createClient(
 );
 
 async function loadVendor() {
+  const vendorMap = {
+    bluebird: "Bluebird Events",
+    north: "North Stage Collective",
+    golden: "Golden Hour Media",
+    elevate: "Elevate Corporate",
+    harvest: "Harvest Table Catering",
+    pulse: "Pulse Entertainment"
+  };
+
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get("id");
+  const vendorName = vendorMap[id];
+
   const { data, error } = await supabaseClient
     .from("vendors")
     .select("*")
-    .eq("name", "Bluebird Events")
+    .eq("name", vendorName)
     .single();
 
   if (error) {
