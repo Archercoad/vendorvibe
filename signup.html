@@ -115,6 +115,18 @@
       text-align: center;
     }
 
+    .error-message {
+      display: none;
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #fff2f2;
+      border: 2px solid #b00020;
+      border-radius: 8px;
+      color: #b00020;
+      font-weight: bold;
+      text-align: center;
+    }
+
     .footer {
       text-align: center;
       padding: 30px 20px;
@@ -124,6 +136,7 @@
     }
   </style>
 </head>
+
 <body>
 
   <nav class="navbar">
@@ -132,7 +145,6 @@
       <a href="index.html">Home</a>
       <a href="vendors.html">Find Vendors</a>
       <a href="signup.html">For Vendors</a>
-      <a href="#">Login</a>
     </div>
   </nav>
 
@@ -144,18 +156,20 @@
   <section class="form-section">
     <div>
       <form class="signup-form" id="signupForm">
+
         <label for="business-name">Business Name</label>
         <input type="text" id="business-name" name="business-name" placeholder="Enter your business name" required>
 
         <label for="category">Vendor Category</label>
         <select id="category" name="category" required>
           <option value="">Select a category</option>
-          <option value="planner">Event Planner</option>
-          <option value="photographer">Photographer</option>
-          <option value="catering">Catering</option>
-          <option value="dj">DJ / Entertainment</option>
-          <option value="decor">Decor / Design</option>
-          <option value="production">Production</option>
+          <option value="Event Planning">Event Planning</option>
+          <option value="Photography">Photography</option>
+          <option value="Catering">Catering</option>
+          <option value="Entertainment">Entertainment</option>
+          <option value="Production">Production</option>
+          <option value="Corporate Events">Corporate Events</option>
+          <option value="Decor & Design">Decor & Design</option>
         </select>
 
         <label for="city">City</label>
@@ -171,7 +185,11 @@
       </form>
 
       <div class="success-message" id="successMessage">
-        Thank you! Your vendor profile request has been submitted.
+        Thank you! Your vendor profile request has been submitted for review.
+      </div>
+
+      <div class="error-message" id="errorMessage">
+        Something went wrong. Please try again.
       </div>
     </div>
   </section>
@@ -180,12 +198,50 @@
     <p>VendorVibe © 2026</p>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
   <script>
+    const supabaseClient = window.supabase.createClient(
+      "https://zvoarlanqjlezqzmgwhe.supabase.co",
+      "sb_publishable_8p6mMcu2YImc5doJhMpIaA_oA1yBYu9"
+    );
+
     const form = document.getElementById("signupForm");
     const successMessage = document.getElementById("successMessage");
+    const errorMessage = document.getElementById("errorMessage");
 
-    form.addEventListener("submit", function(event) {
+    form.addEventListener("submit", async function(event) {
       event.preventDefault();
+
+      successMessage.style.display = "none";
+      errorMessage.style.display = "none";
+
+      const name = document.getElementById("business-name").value;
+      const category = document.getElementById("category").value;
+      const city = document.getElementById("city").value;
+      const email = document.getElementById("email").value;
+      const description = document.getElementById("description").value;
+
+      const { data, error } = await supabaseClient
+        .from("vendors")
+        .insert([
+          {
+            name: name,
+            category: category,
+            city: city,
+            email: email,
+            description: description,
+            image: "",
+            status: "pending"
+          }
+        ]);
+
+      if (error) {
+        console.log("Supabase insert error:", error);
+        errorMessage.style.display = "block";
+        return;
+      }
+
       successMessage.style.display = "block";
       form.reset();
     });
