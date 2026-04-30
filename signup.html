@@ -23,34 +23,17 @@
     .logo {
       font-size: 24px;
       font-weight: bold;
-      color: #1A0C6A;
     }
 
     .nav-links a {
       margin-left: 20px;
       text-decoration: none;
       color: #1A0C6A;
-      font-weight: 500;
-    }
-
-    .nav-links a:hover {
-      text-decoration: underline;
     }
 
     .page-header {
       text-align: center;
       padding: 50px 20px 20px;
-    }
-
-    .page-header h1 {
-      font-size: 42px;
-      margin-bottom: 10px;
-    }
-
-    .page-header p {
-      font-size: 18px;
-      max-width: 700px;
-      margin: 0 auto;
     }
 
     .form-section {
@@ -73,7 +56,6 @@
       margin-top: 20px;
       margin-bottom: 8px;
       font-weight: bold;
-      color: #1A0C6A;
     }
 
     .signup-form input,
@@ -81,174 +63,137 @@
     .signup-form textarea {
       width: 100%;
       padding: 14px;
-      border: 1px solid #b9d8de;
       border-radius: 8px;
-      font-size: 16px;
-      box-sizing: border-box;
-    }
-
-    .signup-form textarea {
-      min-height: 120px;
-      resize: vertical;
+      border: 1px solid #ccc;
     }
 
     .submit-button {
       margin-top: 25px;
-      padding: 15px 25px;
-      font-size: 16px;
+      padding: 15px;
+      background-color: #1A0C6A;
+      color: white;
       border: none;
       border-radius: 6px;
       cursor: pointer;
-      background-color: #1A0C6A;
-      color: white;
     }
 
-    .success-message {
-      display: none;
-      margin-top: 20px;
-      padding: 15px;
-      background-color: white;
-      border: 2px solid #1A0C6A;
-      border-radius: 8px;
-      color: #1A0C6A;
-      font-weight: bold;
-      text-align: center;
-    }
-
+    .success-message,
     .error-message {
       display: none;
       margin-top: 20px;
       padding: 15px;
-      background-color: #fff2f2;
-      border: 2px solid #b00020;
       border-radius: 8px;
-      color: #b00020;
-      font-weight: bold;
       text-align: center;
     }
 
-    .footer {
-      text-align: center;
-      padding: 30px 20px;
-      background-color: #1A0C6A;
-      color: white;
-      margin-top: 20px;
+    .success-message {
+      background: #e6fffa;
+      border: 2px solid #1A0C6A;
+    }
+
+    .error-message {
+      background: #ffe6e6;
+      border: 2px solid red;
     }
   </style>
 </head>
 
 <body>
 
-  <nav class="navbar">
-    <div class="logo">VendorVibe</div>
-    <div class="nav-links">
-      <a href="index.html">Home</a>
-      <a href="vendors.html">Find Vendors</a>
-      <a href="signup.html">For Vendors</a>
-    </div>
-  </nav>
-
-  <section class="page-header">
-    <h1>Join VendorVibe</h1>
-    <p>Create your vendor profile and start connecting with clients looking for the right fit for their event.</p>
-  </section>
-
-  <section class="form-section">
-    <div>
-      <form class="signup-form" id="signupForm">
-
-        <label for="business-name">Business Name</label>
-        <input type="text" id="business-name" name="business-name" placeholder="Enter your business name" required>
-
-        <label for="category">Vendor Category</label>
-        <select id="category" name="category" required>
-          <option value="">Select a category</option>
-          <option value="Event Planning">Event Planning</option>
-          <option value="Photography">Photography</option>
-          <option value="Catering">Catering</option>
-          <option value="Entertainment">Entertainment</option>
-          <option value="Production">Production</option>
-          <option value="Corporate Events">Corporate Events</option>
-          <option value="Decor & Design">Decor & Design</option>
-        </select>
-
-        <label for="city">City</label>
-        <input type="text" id="city" name="city" placeholder="Enter your city">
-
-        <label for="email">Email Address</label>
-        <input type="email" id="email" name="email" placeholder="Enter your email" required>
-
-        <label for="description">Tell Us About Your Business</label>
-        <textarea id="description" name="description" placeholder="Describe your services, style, and ideal clients"></textarea>
-
-        <button type="submit" class="submit-button">Create My Profile</button>
-      </form>
-
-      <div class="success-message" id="successMessage">
-        Thank you! Your vendor profile request has been submitted for review.
-      </div>
-
-      <div class="error-message" id="errorMessage">
-        Something went wrong. Please try again.
-      </div>
-    </div>
-  </section>
-
-  <div class="footer">
-    <p>VendorVibe © 2026</p>
+<nav class="navbar">
+  <div class="logo">VendorVibe</div>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="vendors.html">Find Vendors</a>
+    <a href="signup.html">For Vendors</a>
   </div>
+</nav>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<section class="page-header">
+  <h1>Join VendorVibe</h1>
+</section>
 
-  <script>
-    const supabaseClient = window.supabase.createClient(
-      "https://zvoarlanqjlezqzmgwhe.supabase.co",
-      "sb_publishable_8p6mMcu2YImc5doJhMpIaA_oA1yBYu9"
-    );
+<section class="form-section">
+  <div>
+    <form class="signup-form" id="signupForm">
 
-    const form = document.getElementById("signupForm");
-    const successMessage = document.getElementById("successMessage");
-    const errorMessage = document.getElementById("errorMessage");
+      <label>Business Name</label>
+      <input type="text" id="business-name" required>
 
-    form.addEventListener("submit", async function(event) {
-      event.preventDefault();
+      <label>Category</label>
+      <select id="category" required>
+        <option value="">Select</option>
+        <option>Event Planning</option>
+        <option>Photography</option>
+        <option>Catering</option>
+        <option>Entertainment</option>
+        <option>Production</option>
+        <option>Corporate Events</option>
+      </select>
 
-      successMessage.style.display = "none";
-      errorMessage.style.display = "none";
+      <label>City</label>
+      <input type="text" id="city">
 
-      const name = document.getElementById("business-name").value;
-      const category = document.getElementById("category").value;
-      const city = document.getElementById("city").value;
-      const email = document.getElementById("email").value;
-      const description = document.getElementById("description").value;
+      <label>Email</label>
+      <input type="email" id="email" required>
 
-      const { data, error } = await supabaseClient
-        .from("vendors")
-        .insert([
-          {
-            name: name,
-            category: category,
-            city: city,
-            email: email,
-            description: description,
-            image: "",
-            status: "pending"
-          }
-        ]);
+      <label>Description</label>
+      <textarea id="description"></textarea>
 
-      if (error) {
-  console.log("Supabase insert error:", error);
-  alert("ERROR: " + error.message);
-  errorMessage.style.display = "block";
-  return;
-}
+      <button type="submit" class="submit-button">Submit</button>
+    </form>
 
-alert("SUCCESS - CHECK SUPABASE");
+    <div class="success-message" id="successMessage">
+      Submitted successfully
+    </div>
 
-successMessage.style.display = "block";
-form.reset();
-    });
-  </script>
+    <div class="error-message" id="errorMessage">
+      Something went wrong
+    </div>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+<script>
+const supabaseClient = window.supabase.createClient(
+  "https://zvoarlanqjlezqzmgwhe.supabase.co",
+  "sb_publishable_8p6mMcu2YImc5doJhMpIaA_oA1yBYu9"
+);
+
+document.getElementById("signupForm").addEventListener("submit", async function(e) {
+  e.preventDefault();
+
+  const name = document.getElementById("business-name").value;
+  const category = document.getElementById("category").value;
+  const city = document.getElementById("city").value;
+  const email = document.getElementById("email").value;
+  const description = document.getElementById("description").value;
+
+  const { data, error } = await supabaseClient
+    .from("vendors")
+    .insert([{
+      name,
+      category,
+      city,
+      email,
+      description,
+      image: "",
+      status: "pending"
+    }]);
+
+  if (error) {
+    alert("ERROR: " + error.message);
+    document.getElementById("errorMessage").style.display = "block";
+    return;
+  }
+
+  alert("SUCCESS - CHECK SUPABASE");
+
+  document.getElementById("successMessage").style.display = "block";
+  document.getElementById("signupForm").reset();
+});
+</script>
 
 </body>
 </html>
