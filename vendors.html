@@ -81,9 +81,24 @@
     }
 
     .vendor-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
-    }
+  transform: translateY(-4px);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
+}
+
+.vendor-card.premium {
+  border: 3px solid #1A0C6A;
+}
+
+.premium-badge {
+  display: inline-block;
+  margin-bottom: 10px;
+  padding: 6px 10px;
+  background-color: #1A0C6A;
+  color: white;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: bold;
+}
 
     .vendor-card img {
       width: 100%;
@@ -188,47 +203,49 @@
         const vendorId = createVendorId(vendor.name);
 
         const card = `
-          <a href="vendor.html?id=${vendorId}" class="vendor-link">
-            <div class="vendor-card">
-              <img src="${vendor.image || 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622'}" alt="${vendor.name}">
-              <div class="vendor-card-content">
-                <h2>${vendor.name}</h2>
-                <p>${vendor.description || ''}</p>
-                <div class="tag">${vendor.category || 'Vendor'}</div>
-              </div>
-            </div>
-          </a>
-        `;
+  <a href="vendor.html?id=${vendorId}" class="vendor-link">
+    <div class="vendor-card ${vendor.is_premium ? 'premium' : ''}">
+      <img src="${vendor.image || 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622'}" alt="${vendor.name}">
+      <div class="vendor-card-content">
+        ${vendor.is_premium ? '<div class="premium-badge">Premium Vendor</div>' : ''}
+        <h2>${vendor.name}</h2>
+        <p>${vendor.description || ''}</p>
+        <div class="tag">${vendor.category || 'Vendor'}</div>
+      </div>
+    </div>
+  </a>
+`;
 
-        vendorGrid.innerHTML += card;
-      });
-    }
+vendorGrid.innerHTML += card;
+});
+}
 
-    function filterVendors() {
-      const searchText = searchInput.value.toLowerCase();
-      const selectedCategory = categoryFilter.value;
+function filterVendors() {
+  const searchText = searchInput.value.toLowerCase();
+  const selectedCategory = categoryFilter.value;
 
-      const filtered = allVendors.filter(vendor => {
-        const matchesSearch =
-          vendor.name.toLowerCase().includes(searchText) ||
-          vendor.description.toLowerCase().includes(searchText) ||
-          vendor.category.toLowerCase().includes(searchText);
+  const filtered = allVendors.filter(vendor => {
+    const matchesSearch =
+      vendor.name.toLowerCase().includes(searchText) ||
+      vendor.description.toLowerCase().includes(searchText) ||
+      vendor.category.toLowerCase().includes(searchText);
 
-        const matchesCategory =
-          selectedCategory === "all" || vendor.category === selectedCategory;
+    const matchesCategory =
+      selectedCategory === "all" || vendor.category === selectedCategory;
 
-        return matchesSearch && matchesCategory;
-      });
+    return matchesSearch && matchesCategory;
+  });
 
-      renderVendors(filtered);
-    }
+  renderVendors(filtered);
+}
 
-    async function loadVendors() {
-      const { data, error } = await supabaseClient
-        .from("vendors")
-        .select("*")
-        .eq("status", "approved")
-        .order("created_at", { ascending: false });
+async function loadVendors() {
+  const { data, error } = await supabaseClient
+    .from("vendors")
+    .select("*")
+    .eq("status", "approved")
+    .order("is_premium", { ascending: false })
+    .order("created_at", { ascending: false });
 
       if (error) {
         vendorGrid.innerHTML = "<p>Something went wrong loading vendors.</p>";
