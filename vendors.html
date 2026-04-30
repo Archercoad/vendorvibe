@@ -23,34 +23,17 @@
     .logo {
       font-size: 24px;
       font-weight: bold;
-      color: #1A0C6A;
     }
 
     .nav-links a {
       margin-left: 20px;
       text-decoration: none;
       color: #1A0C6A;
-      font-weight: 500;
-    }
-
-    .nav-links a:hover {
-      text-decoration: underline;
     }
 
     .page-header {
       text-align: center;
       padding: 60px 20px 20px;
-    }
-
-    .page-header h1 {
-      font-size: 48px;
-      margin-bottom: 10px;
-    }
-
-    .page-header p {
-      font-size: 20px;
-      max-width: 750px;
-      margin: 0 auto;
     }
 
     .filter-bar {
@@ -68,7 +51,6 @@
       border: 1px solid #b9d8de;
       border-radius: 8px;
       min-width: 240px;
-      box-sizing: border-box;
     }
 
     .vendor-grid {
@@ -77,7 +59,6 @@
       gap: 25px;
       flex-wrap: wrap;
       padding: 30px 20px 80px;
-      align-items: stretch;
     }
 
     .vendor-link {
@@ -94,10 +75,9 @@
       overflow: hidden;
       box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
       text-align: left;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
       display: flex;
       flex-direction: column;
-      height: 100%;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
     .vendor-card:hover {
@@ -109,7 +89,7 @@
       width: 100%;
       height: 200px;
       object-fit: cover;
-      display: block;
+      background-color: #EBFCFF;
     }
 
     .vendor-card-content {
@@ -127,7 +107,6 @@
     .vendor-card p {
       font-size: 16px;
       line-height: 1.5;
-      margin-bottom: 12px;
     }
 
     .tag {
@@ -145,7 +124,6 @@
       padding: 30px 20px;
       background-color: #1A0C6A;
       color: white;
-      margin-top: 20px;
     }
   </style>
 </head>
@@ -163,95 +141,110 @@
 
   <section class="page-header">
     <h1>Find Vendors</h1>
-    <p>Browse vendors for weddings, corporate events, festivals, and unforgettable experiences.</p>
+    <p>Browse approved vendors for weddings, corporate events, festivals, and unforgettable experiences.</p>
   </section>
 
   <section class="filter-bar">
     <input type="text" id="searchInput" placeholder="Search vendors or services">
     <select id="categoryFilter">
       <option value="all">All Categories</option>
-      <option value="event planning">Event Planning</option>
-      <option value="photography">Photography</option>
-      <option value="catering">Catering</option>
-      <option value="entertainment">Entertainment</option>
-      <option value="production">Production</option>
-      <option value="corporate events">Corporate Events</option>
+      <option value="Event Planning">Event Planning</option>
+      <option value="Photography">Photography</option>
+      <option value="Catering">Catering</option>
+      <option value="Entertainment">Entertainment</option>
+      <option value="Production">Production</option>
+      <option value="Corporate Events">Corporate Events</option>
     </select>
   </section>
 
-  <section class="vendor-grid">
-
-    <a href="vendor.html?id=bluebird" class="vendor-link">
-      <div class="vendor-card" data-category="event planning">
-        <img src="https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=900&q=80">
-        <div class="vendor-card-content">
-          <h2>Bluebird Events</h2>
-          <p>Full-service planning for weddings and private events.</p>
-          <div class="tag">Event Planning</div>
-        </div>
-      </div>
-    </a>
-
-    <a href="vendor.html?id=north" class="vendor-link">
-      <div class="vendor-card" data-category="production">
-        <img src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=900&q=80">
-        <div class="vendor-card-content">
-          <h2>North Stage Collective</h2>
-          <p>Production support for festivals and large events.</p>
-          <div class="tag">Production</div>
-        </div>
-      </div>
-    </a>
-
-    <a href="vendor.html?id=elevate" class="vendor-link">
-      <div class="vendor-card" data-category="corporate events">
-        <img src="https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=900&q=80">
-        <div class="vendor-card-content">
-          <h2>Elevate Corporate</h2>
-          <p>Professional corporate event planning and coordination.</p>
-          <div class="tag">Corporate Events</div>
-        </div>
-      </div>
-    </a>
-
-    <a href="vendor.html?id=golden" class="vendor-link">
-      <div class="vendor-card" data-category="photography">
-        <img src="https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=900&q=80">
-        <div class="vendor-card-content">
-          <h2>Golden Hour Media</h2>
-          <p>Photography for weddings, brands, and events.</p>
-          <div class="tag">Photography</div>
-        </div>
-      </div>
-    </a>
-
-    <a href="vendor.html?id=harvest" class="vendor-link">
-      <div class="vendor-card" data-category="catering">
-        <img src="https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=900&q=80">
-        <div class="vendor-card-content">
-          <h2>Harvest Table Catering</h2>
-          <p>Beautiful menus for intimate and large events.</p>
-          <div class="tag">Catering</div>
-        </div>
-      </div>
-    </a>
-
-    <a href="vendor.html?id=pulse" class="vendor-link">
-      <div class="vendor-card" data-category="entertainment">
-        <img src="https://images.unsplash.com/photo-1505236858219-8359eb29e329?auto=format&fit=crop&w=900&q=80">
-        <div class="vendor-card-content">
-          <h2>Pulse Entertainment</h2>
-          <p>DJs and live entertainment for unforgettable events.</p>
-          <div class="tag">Entertainment</div>
-        </div>
-      </div>
-    </a>
-
-  </section>
+  <section class="vendor-grid" id="vendorGrid"></section>
 
   <div class="footer">
     <p>VendorVibe © 2026</p>
   </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+  <script>
+    const supabaseClient = window.supabase.createClient(
+      "https://zvoarlanqjlezqzmgwhe.supabase.co",
+      "sb_publishable_8p6mMcu2YImc5doJhMpIaA_oA1yBYu9"
+    );
+
+    const vendorGrid = document.getElementById("vendorGrid");
+    const searchInput = document.getElementById("searchInput");
+    const categoryFilter = document.getElementById("categoryFilter");
+
+    let allVendors = [];
+
+    function createVendorId(name) {
+      return name.toLowerCase().replaceAll(" ", "-");
+    }
+
+    function renderVendors(vendors) {
+      vendorGrid.innerHTML = "";
+
+      vendors.forEach(vendor => {
+        const vendorId = createVendorId(vendor.name);
+
+        const card = `
+          <a href="vendor.html?id=${vendorId}" class="vendor-link">
+            <div class="vendor-card">
+              <img src="${vendor.image || 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622'}" alt="${vendor.name}">
+              <div class="vendor-card-content">
+                <h2>${vendor.name}</h2>
+                <p>${vendor.description || ''}</p>
+                <div class="tag">${vendor.category || 'Vendor'}</div>
+              </div>
+            </div>
+          </a>
+        `;
+
+        vendorGrid.innerHTML += card;
+      });
+    }
+
+    function filterVendors() {
+      const searchText = searchInput.value.toLowerCase();
+      const selectedCategory = categoryFilter.value;
+
+      const filtered = allVendors.filter(vendor => {
+        const matchesSearch =
+          vendor.name.toLowerCase().includes(searchText) ||
+          vendor.description.toLowerCase().includes(searchText) ||
+          vendor.category.toLowerCase().includes(searchText);
+
+        const matchesCategory =
+          selectedCategory === "all" || vendor.category === selectedCategory;
+
+        return matchesSearch && matchesCategory;
+      });
+
+      renderVendors(filtered);
+    }
+
+    async function loadVendors() {
+      const { data, error } = await supabaseClient
+        .from("vendors")
+        .select("*")
+        .eq("status", "approved")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        vendorGrid.innerHTML = "<p>Something went wrong loading vendors.</p>";
+        console.log("Supabase load error:", error);
+        return;
+      }
+
+      allVendors = data;
+      renderVendors(allVendors);
+    }
+
+    searchInput.addEventListener("input", filterVendors);
+    categoryFilter.addEventListener("change", filterVendors);
+
+    loadVendors();
+  </script>
 
 </body>
 </html>
