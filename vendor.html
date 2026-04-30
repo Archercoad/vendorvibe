@@ -112,6 +112,23 @@
       color: white;
       margin-top: 30px;
     }
+
+    .vendor-links a {
+  display: inline-block;
+  margin-right: 12px;
+  margin-top: 10px;
+  padding: 8px 12px;
+  border: 1px solid #1A0C6A;
+  border-radius: 20px;
+  text-decoration: none;
+  color: #1A0C6A;
+  font-size: 14px;
+}
+
+.vendor-links a:hover {
+  background-color: #1A0C6A;
+  color: white;
+}
   </style>
 </head>
 
@@ -130,11 +147,14 @@
     <img id="vendorImage">
 
     <div class="profile-info">
-      <div class="tag" id="vendorTag"></div>
-      <h1 id="vendorName"></h1>
-      <p id="vendorDescription"></p>
-      <a href="signup.html" class="cta-button">Contact This Vendor</a>
-    </div>
+  <div class="tag" id="vendorTag"></div>
+  <h1 id="vendorName"></h1>
+  <p id="vendorDescription"></p>
+
+  <div id="vendorLinks" style="margin-top: 15px;"></div>
+
+  <a href="signup.html" class="cta-button">Contact This Vendor</a>
+</div>
   </section>
 
   <section class="section">
@@ -200,15 +220,36 @@ async function loadVendor() {
     return;
   }
 
-  if (data) {
-    document.getElementById("vendorName").textContent = data.name;
-    document.getElementById("vendorTag").textContent = data.category;
-    document.getElementById("vendorImage").src = data.image;
-    document.getElementById("vendorDescription").textContent = data.description;
-    document.getElementById("vendorAbout").textContent = data.description;
-    document.getElementById("vendorEvents").textContent = data.category;
-    document.getElementById("vendorServices").textContent = "Full-service event planning";
+ if (data) {
+  document.getElementById("vendorName").textContent = data.name;
+  document.getElementById("vendorTag").textContent = data.category;
+  document.getElementById("vendorImage").src = data.image;
+  document.getElementById("vendorDescription").textContent = data.description;
+  document.getElementById("vendorAbout").textContent = data.description;
+  document.getElementById("vendorEvents").textContent = data.category;
+  document.getElementById("vendorServices").textContent = "Full-service event planning";
+
+  const linksContainer = document.getElementById("vendorLinks");
+
+  if (data.is_premium) {
+    let linksHTML = '<div class="vendor-links">';
+
+    if (data.website) {
+      linksHTML += `<a href="${data.website}" target="_blank">Website</a>`;
+    }
+
+    if (data.instagram) {
+      linksHTML += `<a href="${data.instagram}" target="_blank">Instagram</a>`;
+    }
+
+    if (data.facebook) {
+      linksHTML += `<a href="${data.facebook}" target="_blank">Facebook</a>`;
+    }
+
+    linksHTML += '</div>';
+    linksContainer.innerHTML = linksHTML;
   }
+}
 }
 
 loadVendor();
