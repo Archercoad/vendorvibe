@@ -183,15 +183,13 @@ document.getElementById("signupForm").addEventListener("submit", async function(
     }]);
 
   if (error) {
-    alert("ERROR: " + error.message);
-    document.getElementById("errorMessage").style.display = "block";
-    return;
-  }
+  console.log("Supabase insert error:", error);
+  document.getElementById("errorMessage").style.display = "block";
+  return;
+}
 
-  alert("SUCCESS - CHECK SUPABASE");
-
-  document.getElementById("successMessage").style.display = "block";
-  document.getElementById("signupForm").reset();
+document.getElementById("successMessage").style.display = "block";
+document.getElementById("signupForm").reset();
 });
 </script>
 
