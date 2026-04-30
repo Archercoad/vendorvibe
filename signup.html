@@ -237,13 +237,16 @@
         ]);
 
       if (error) {
-        console.log("Supabase insert error:", error);
-        errorMessage.style.display = "block";
-        return;
-      }
+  console.log("Supabase insert error:", error);
+  alert("ERROR: " + error.message);
+  errorMessage.style.display = "block";
+  return;
+}
 
-      successMessage.style.display = "block";
-      form.reset();
+alert("SUCCESS - CHECK SUPABASE");
+
+successMessage.style.display = "block";
+form.reset();
     });
   </script>
 
