@@ -45,6 +45,7 @@
       width: 100%;
       max-width: 500px;
       border-radius: 16px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
     }
 
     .profile-info {
@@ -68,6 +69,7 @@
       border: 1px solid #1A0C6A;
       border-radius: 20px;
       margin-bottom: 20px;
+      background-color: white;
     }
 
     .cta-button {
@@ -78,6 +80,24 @@
       text-decoration: none;
       border-radius: 8px;
       margin-top: 15px;
+      font-weight: bold;
+    }
+
+    .vendor-links a {
+      display: inline-block;
+      margin-right: 12px;
+      margin-top: 10px;
+      padding: 8px 12px;
+      border: 1px solid #1A0C6A;
+      border-radius: 20px;
+      text-decoration: none;
+      color: #1A0C6A;
+      font-size: 14px;
+    }
+
+    .vendor-links a:hover {
+      background-color: #1A0C6A;
+      color: white;
     }
 
     .section {
@@ -103,6 +123,7 @@
       border-radius: 12px;
       flex: 1;
       min-width: 200px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
     }
 
     .footer {
@@ -112,23 +133,6 @@
       color: white;
       margin-top: 30px;
     }
-
-    .vendor-links a {
-  display: inline-block;
-  margin-right: 12px;
-  margin-top: 10px;
-  padding: 8px 12px;
-  border: 1px solid #1A0C6A;
-  border-radius: 20px;
-  text-decoration: none;
-  color: #1A0C6A;
-  font-size: 14px;
-}
-
-.vendor-links a:hover {
-  background-color: #1A0C6A;
-  color: white;
-}
   </style>
 </head>
 
@@ -144,17 +148,17 @@
   </nav>
 
   <section class="profile-hero">
-    <img id="vendorImage">
+    <img id="vendorImage" alt="Vendor image">
 
     <div class="profile-info">
-  <div class="tag" id="vendorTag"></div>
-  <h1 id="vendorName"></h1>
-  <p id="vendorDescription"></p>
+      <div class="tag" id="vendorTag"></div>
+      <h1 id="vendorName"></h1>
+      <p id="vendorDescription"></p>
 
-  <div id="vendorLinks" style="margin-top: 15px;"></div>
+      <div id="vendorLinks" style="margin-top: 15px;"></div>
 
-  <a href="signup.html" class="cta-button">Contact This Vendor</a>
-</div>
+      <a href="signup.html" class="cta-button">Contact This Vendor</a>
+    </div>
   </section>
 
   <section class="section">
@@ -187,73 +191,69 @@
     <p>VendorVibe © 2026</p>
   </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
-<script>
-const supabaseClient = window.supabase.createClient(
-  "https://zvoarlanqjlezqzmgwhe.supabase.co",
-  "sb_publishable_8p6mMcu2YImc5doJhMpIaA_oA1yBYu9"
-);
+  <script>
+    const supabaseClient = window.supabase.createClient(
+      "https://zvoarlanqjlezqzmgwhe.supabase.co",
+      "sb_publishable_8p6mMcu2YImc5doJhMpIaA_oA1yBYu9"
+    );
 
-async function loadVendor() {
-  const vendorMap = {
-    bluebird: "Bluebird Events",
-    north: "North Stage Collective",
-    golden: "Golden Hour Media",
-    elevate: "Elevate Corporate",
-    harvest: "Harvest Table Catering",
-    pulse: "Pulse Entertainment"
-  };
-
-  const params = new URLSearchParams(window.location.search);
-  const id = params.get("id");
-  const vendorName = vendorMap[id];
-
-  const { data, error } = await supabaseClient
-    .from("vendors")
-    .select("*")
-    .eq("name", vendorName)
-    .single();
-
-  if (error) {
-    console.log("Supabase error:", error);
-    return;
-  }
-
- if (data) {
-  document.getElementById("vendorName").textContent = data.name;
-  document.getElementById("vendorTag").textContent = data.category;
-  document.getElementById("vendorImage").src = data.image;
-  document.getElementById("vendorDescription").textContent = data.description;
-  document.getElementById("vendorAbout").textContent = data.description;
-  document.getElementById("vendorEvents").textContent = data.category;
-  document.getElementById("vendorServices").textContent = "Full-service event planning";
-
-  const linksContainer = document.getElementById("vendorLinks");
-
-  if (data.is_premium) {
-    let linksHTML = '<div class="vendor-links">';
-
-    if (data.website) {
-      linksHTML += `<a href="${data.website}" target="_blank">Website</a>`;
+    function createVendorId(name) {
+      return name.toLowerCase().replaceAll(" ", "-");
     }
 
-    if (data.instagram) {
-      linksHTML += `<a href="${data.instagram}" target="_blank">Instagram</a>`;
+    async function loadVendor() {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get("id");
+
+      const { data, error } = await supabaseClient
+        .from("vendors")
+        .select("*")
+        .eq("status", "approved");
+
+      if (error) {
+        console.log("Supabase error:", error);
+        return;
+      }
+
+      const vendor = data.find(v => createVendorId(v.name) === id);
+
+      if (vendor) {
+        document.getElementById("vendorName").textContent = vendor.name;
+        document.getElementById("vendorTag").textContent = vendor.category;
+        document.getElementById("vendorImage").src = vendor.image || "https://images.unsplash.com/photo-1511795409834-ef04bbd61622";
+        document.getElementById("vendorDescription").textContent = vendor.description;
+        document.getElementById("vendorAbout").textContent = vendor.description;
+        document.getElementById("vendorEvents").textContent = vendor.category;
+        document.getElementById("vendorServices").textContent = "Full-service vendor support";
+
+        const linksContainer = document.getElementById("vendorLinks");
+        linksContainer.innerHTML = "";
+
+        if (vendor.is_premium) {
+          let linksHTML = '<div class="vendor-links">';
+
+          if (vendor.website) {
+            linksHTML += `<a href="${vendor.website}" target="_blank">Website</a>`;
+          }
+
+          if (vendor.instagram) {
+            linksHTML += `<a href="${vendor.instagram}" target="_blank">Instagram</a>`;
+          }
+
+          if (vendor.facebook) {
+            linksHTML += `<a href="${vendor.facebook}" target="_blank">Facebook</a>`;
+          }
+
+          linksHTML += '</div>';
+          linksContainer.innerHTML = linksHTML;
+        }
+      }
     }
 
-    if (data.facebook) {
-      linksHTML += `<a href="${data.facebook}" target="_blank">Facebook</a>`;
-    }
-
-    linksHTML += '</div>';
-    linksContainer.innerHTML = linksHTML;
-  }
-}
-}
-
-loadVendor();
-</script>
+    loadVendor();
+  </script>
 
 </body>
 </html>
