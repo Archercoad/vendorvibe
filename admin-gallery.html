@@ -12,16 +12,12 @@
     }
 
     .container {
-      max-width: 700px;
+      max-width: 900px;
       margin: 60px auto;
       background: white;
       padding: 35px;
       border-radius: 14px;
       box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
-    }
-
-    h1 {
-      margin-top: 0;
     }
 
     label {
@@ -42,19 +38,48 @@
     }
 
     button {
-      margin-top: 25px;
-      padding: 15px 25px;
+      margin-top: 20px;
+      padding: 12px 20px;
       background-color: #1A0C6A;
       color: white;
       border: none;
       border-radius: 8px;
-      font-size: 16px;
+      font-size: 15px;
       cursor: pointer;
     }
 
     .message {
       margin-top: 20px;
       font-weight: bold;
+    }
+
+    .gallery-preview {
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+      margin-top: 25px;
+    }
+
+    .gallery-item {
+      width: 180px;
+      background: #EBFCFF;
+      padding: 10px;
+      border-radius: 12px;
+      text-align: center;
+    }
+
+    .gallery-item img {
+      width: 180px;
+      height: 180px;
+      object-fit: cover;
+      border-radius: 10px;
+      display: block;
+    }
+
+    .delete-button {
+      background-color: #b00020;
+      margin-top: 10px;
+      width: 100%;
     }
 
     a {
@@ -67,7 +92,7 @@
 
   <div class="container">
     <h1>Vendor Gallery Upload</h1>
-    <p>Upload multiple photos to a premium vendor gallery.</p>
+    <p>Upload or delete gallery photos for premium vendors.</p>
 
     <label for="vendorSelect">Vendor</label>
     <select id="vendorSelect">
@@ -80,6 +105,9 @@
     <button id="uploadButton">Upload Images</button>
 
     <p class="message" id="message"></p>
+
+    <h2>Current Gallery</h2>
+    <div class="gallery-preview" id="galleryPreview"></div>
 
     <p><a href="vendors.html">Back to Vendors</a></p>
   </div>
@@ -96,6 +124,7 @@
     const photoInput = document.getElementById("photoInput");
     const uploadButton = document.getElementById("uploadButton");
     const message = document.getElementById("message");
+    const galleryPreview = document.getElementById("galleryPreview");
 
     async function loadVendors() {
       const { data, error } = await supabaseClient
@@ -106,6 +135,7 @@
 
       if (error) {
         message.textContent = "Could not load vendors.";
+        console.log(error);
         return;
       }
 
@@ -120,6 +150,62 @@
         `;
       });
     }
+
+    async function loadGallery(vendorId) {
+      galleryPreview.innerHTML = "";
+
+      if (!vendorId) return;
+
+      const { data, error } = await supabaseClient
+        .from("vendor_gallery")
+        .select("*")
+        .eq("vendor_id", vendorId)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        message.textContent = "Could not load gallery.";
+        console.log(error);
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        galleryPreview.innerHTML = "<p>No gallery images yet.</p>";
+        return;
+      }
+
+      data.forEach(image => {
+        galleryPreview.innerHTML += `
+          <div class="gallery-item">
+            <img src="${image.image_url}" alt="Gallery image">
+            <button class="delete-button" onclick="deleteImage('${image.id}')">Delete</button>
+          </div>
+        `;
+      });
+    }
+
+    async function deleteImage(imageId) {
+      const confirmDelete = confirm("Delete this image from the gallery?");
+      if (!confirmDelete) return;
+
+      const { error } = await supabaseClient
+        .from("vendor_gallery")
+        .delete()
+        .eq("id", imageId);
+
+      if (error) {
+        message.textContent = "Delete failed.";
+        console.log(error);
+        return;
+      }
+
+      message.textContent = "Image deleted from gallery.";
+      loadGallery(vendorSelect.value);
+    }
+
+    vendorSelect.addEventListener("change", function() {
+      message.textContent = "";
+      loadGallery(vendorSelect.value);
+    });
 
     uploadButton.addEventListener("click", async function() {
       message.textContent = "";
@@ -157,8 +243,8 @@
           .upload(filePath, file);
 
         if (uploadError) {
-          console.log(uploadError);
           message.textContent = "Upload failed.";
+          console.log(uploadError);
           return;
         }
 
@@ -179,14 +265,15 @@
           ]);
 
         if (insertError) {
+          message.textContent = "Image save failed.";
           console.log(insertError);
-          message.textContent = "Image saved failed.";
           return;
         }
       }
 
       message.textContent = "All images uploaded successfully!";
       photoInput.value = "";
+      loadGallery(vendorId);
     });
 
     loadVendors();
