@@ -53,6 +53,26 @@
       font-weight: bold;
     }
 
+    .drop-zone {
+      margin-top: 12px;
+      padding: 35px;
+      border: 2px dashed #1A0C6A;
+      border-radius: 14px;
+      text-align: center;
+      background-color: #EBFCFF;
+      cursor: pointer;
+    }
+
+    .drop-zone.dragover {
+      background-color: white;
+      border-style: solid;
+    }
+
+    .file-list {
+      margin-top: 12px;
+      font-size: 14px;
+    }
+
     .gallery-preview {
       display: flex;
       gap: 18px;
@@ -99,8 +119,16 @@
       <option value="">Loading vendors...</option>
     </select>
 
-    <label for="photoInput">Upload Photos</label>
-    <input type="file" id="photoInput" accept="image/*" multiple>
+    <label>Upload Photos</label>
+
+    <div class="drop-zone" id="dropZone">
+      <p><strong>Drag & drop photos here</strong></p>
+      <p>or click to choose files</p>
+    </div>
+
+    <input type="file" id="photoInput" accept="image/*" multiple style="display: none;">
+
+    <div class="file-list" id="fileList">No files selected.</div>
 
     <button id="uploadButton">Upload Images</button>
 
@@ -125,6 +153,50 @@
     const uploadButton = document.getElementById("uploadButton");
     const message = document.getElementById("message");
     const galleryPreview = document.getElementById("galleryPreview");
+    const dropZone = document.getElementById("dropZone");
+    const fileList = document.getElementById("fileList");
+
+    let selectedFiles = [];
+
+    function updateFileList() {
+      if (selectedFiles.length === 0) {
+        fileList.textContent = "No files selected.";
+        return;
+      }
+
+      fileList.innerHTML = selectedFiles
+        .map(file => `• ${file.name}`)
+        .join("<br>");
+    }
+
+    dropZone.addEventListener("click", function() {
+      photoInput.click();
+    });
+
+    photoInput.addEventListener("change", function() {
+      selectedFiles = Array.from(photoInput.files);
+      updateFileList();
+    });
+
+    dropZone.addEventListener("dragover", function(event) {
+      event.preventDefault();
+      dropZone.classList.add("dragover");
+    });
+
+    dropZone.addEventListener("dragleave", function() {
+      dropZone.classList.remove("dragover");
+    });
+
+    dropZone.addEventListener("drop", function(event) {
+      event.preventDefault();
+      dropZone.classList.remove("dragover");
+
+      selectedFiles = Array.from(event.dataTransfer.files).filter(file =>
+        file.type.startsWith("image/")
+      );
+
+      updateFileList();
+    });
 
     async function loadVendors() {
       const { data, error } = await supabaseClient
@@ -213,7 +285,6 @@
       const vendorId = vendorSelect.value;
       const selectedOption = vendorSelect.options[vendorSelect.selectedIndex];
       const isPremium = selectedOption?.dataset?.premium === "true";
-      const files = photoInput.files;
 
       if (!vendorId) {
         message.textContent = "Please select a vendor.";
@@ -225,14 +296,14 @@
         return;
       }
 
-      if (!files.length) {
+      if (!selectedFiles.length) {
         message.textContent = "Please select at least one photo.";
         return;
       }
 
       message.textContent = "Uploading...";
 
-      for (let file of files) {
+      for (let file of selectedFiles) {
         const fileExt = file.name.split(".").pop();
         const fileName = `${vendorId}-${Date.now()}-${Math.random()}.${fileExt}`;
         const filePath = `${vendorId}/${fileName}`;
@@ -272,7 +343,9 @@
       }
 
       message.textContent = "All images uploaded successfully!";
+      selectedFiles = [];
       photoInput.value = "";
+      updateFileList();
       loadGallery(vendorId);
     });
 
