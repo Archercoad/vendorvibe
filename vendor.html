@@ -58,29 +58,23 @@
       margin-bottom: 15px;
     }
 
-    .profile-info p {
-      font-size: 18px;
-      line-height: 1.6;
-    }
-
     .tag {
       display: inline-block;
       padding: 8px 14px;
       border: 1px solid #1A0C6A;
       border-radius: 20px;
-      margin-bottom: 20px;
+      margin-bottom: 10px;
       background-color: white;
     }
 
     .premium-label {
-      display: inline-block;
+      display: none;
       margin-left: 10px;
-      padding: 8px 14px;
+      padding: 6px 12px;
       background-color: #1A0C6A;
       color: white;
       border-radius: 20px;
-      font-size: 14px;
-      font-weight: bold;
+      font-size: 13px;
     }
 
     .cta-button {
@@ -91,19 +85,17 @@
       text-decoration: none;
       border-radius: 8px;
       margin-top: 15px;
-      font-weight: bold;
     }
 
     .vendor-links a {
       display: inline-block;
-      margin-right: 12px;
+      margin-right: 10px;
       margin-top: 10px;
-      padding: 8px 12px;
+      padding: 6px 10px;
       border: 1px solid #1A0C6A;
       border-radius: 20px;
       text-decoration: none;
       color: #1A0C6A;
-      font-size: 14px;
     }
 
     .vendor-links a:hover {
@@ -115,11 +107,6 @@
       max-width: 1100px;
       margin: 0 auto;
       padding: 20px;
-    }
-
-    .section h2 {
-      font-size: 28px;
-      margin-bottom: 10px;
     }
 
     .details-grid {
@@ -134,34 +121,49 @@
       border-radius: 12px;
       flex: 1;
       min-width: 200px;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
-    }
-
-    .gallery-section {
-      display: none;
     }
 
     .gallery-grid {
-  display: flex;
-  gap: 18px;
-  flex-wrap: wrap;
-  margin-top: 20px;
-}
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
 
-.gallery-grid img {
-  width: 260px;
-  height: 260px;
-  object-fit: cover;
-  border-radius: 14px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
-}
+    .gallery-grid img {
+      width: 260px;
+      height: 260px;
+      object-fit: cover;
+      border-radius: 14px;
+      cursor: pointer;
+    }
 
-    .footer {
-      text-align: center;
-      padding: 30px;
-      background: #1A0C6A;
+    /* LIGHTBOX */
+    .lightbox {
+      display: none;
+      position: fixed;
+      z-index: 999;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.85);
+      justify-content: center;
+      align-items: center;
+    }
+
+    .lightbox img {
+      max-width: 90%;
+      max-height: 85%;
+    }
+
+    .lightbox-close {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      font-size: 40px;
       color: white;
-      margin-top: 30px;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -178,18 +180,18 @@
   </nav>
 
   <section class="profile-hero">
-    <img id="vendorImage" alt="Vendor image">
+    <img id="vendorImage">
 
     <div class="profile-info">
       <div>
         <span class="tag" id="vendorTag"></span>
-        <span class="premium-label" id="premiumLabel" style="display: none;">Premium Vendor</span>
+        <span class="premium-label" id="premiumLabel">Premium Vendor</span>
       </div>
 
       <h1 id="vendorName"></h1>
       <p id="vendorDescription"></p>
 
-      <div id="vendorLinks" style="margin-top: 15px;"></div>
+      <div id="vendorLinks"></div>
 
       <a href="signup.html" class="cta-button">Contact This Vendor</a>
     </div>
@@ -216,18 +218,20 @@
 
       <div class="detail-card">
         <h3>Location</h3>
-        <p id="vendorLocation">Ontario, Canada</p>
+        <p id="vendorLocation"></p>
       </div>
     </div>
   </section>
 
-  <section class="section gallery-section" id="gallerySection">
+  <section class="section" id="gallerySection" style="display:none;">
     <h2>Photo Gallery</h2>
     <div class="gallery-grid" id="galleryGrid"></div>
   </section>
 
-  <div class="footer">
-    <p>VendorVibe © 2026</p>
+  <!-- LIGHTBOX -->
+  <div class="lightbox" id="lightbox">
+    <span class="lightbox-close" id="lightboxClose">&times;</span>
+    <img id="lightboxImage">
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
@@ -242,88 +246,68 @@
       return name.toLowerCase().replaceAll(" ", "-");
     }
 
-    async function loadVendor() {
-      const params = new URLSearchParams(window.location.search);
-      const id = params.get("id");
+    function openLightbox(url) {
+      document.getElementById("lightboxImage").src = url;
+      document.getElementById("lightbox").style.display = "flex";
+    }
 
-      const { data, error } = await supabaseClient
+    document.getElementById("lightboxClose").onclick = () => {
+      document.getElementById("lightbox").style.display = "none";
+    };
+
+    document.getElementById("lightbox").onclick = (e) => {
+      if (e.target.id === "lightbox") {
+        document.getElementById("lightbox").style.display = "none";
+      }
+    };
+
+    async function loadVendor() {
+      const id = new URLSearchParams(window.location.search).get("id");
+
+      const { data } = await supabaseClient
         .from("vendors")
         .select("*")
         .eq("status", "approved");
 
-      if (error) {
-        console.log("Supabase vendor error:", error);
-        return;
-      }
-
       const vendor = data.find(v => createVendorId(v.name) === id);
 
-      if (!vendor) {
-        document.getElementById("vendorName").textContent = "Vendor not found";
-        return;
-      }
+      if (!vendor) return;
 
       document.getElementById("vendorName").textContent = vendor.name;
       document.getElementById("vendorTag").textContent = vendor.category;
-      document.getElementById("vendorImage").src = vendor.image || "https://images.unsplash.com/photo-1511795409834-ef04bbd61622";
-      document.getElementById("vendorDescription").textContent = vendor.description || "";
-      document.getElementById("vendorAbout").textContent = vendor.description || "";
-      document.getElementById("vendorEvents").textContent = vendor.category || "";
-      document.getElementById("vendorServices").textContent = "Full-service vendor support";
-      document.getElementById("vendorLocation").textContent = vendor.city || "Ontario, Canada";
-
-      const linksContainer = document.getElementById("vendorLinks");
-      linksContainer.innerHTML = "";
+      document.getElementById("vendorImage").src = vendor.image;
+      document.getElementById("vendorDescription").textContent = vendor.description;
+      document.getElementById("vendorAbout").textContent = vendor.description;
+      document.getElementById("vendorEvents").textContent = vendor.category;
+      document.getElementById("vendorServices").textContent = "Full service";
+      document.getElementById("vendorLocation").textContent = vendor.city;
 
       if (vendor.is_premium) {
         document.getElementById("premiumLabel").style.display = "inline-block";
 
-        let linksHTML = '<div class="vendor-links">';
+        let links = "";
 
-        if (vendor.website) {
-          linksHTML += `<a href="${vendor.website}" target="_blank">Website</a>`;
+        if (vendor.website) links += `<a href="${vendor.website}" target="_blank">Website</a>`;
+        if (vendor.instagram) links += `<a href="${vendor.instagram}" target="_blank">Instagram</a>`;
+        if (vendor.facebook) links += `<a href="${vendor.facebook}" target="_blank">Facebook</a>`;
+
+        document.getElementById("vendorLinks").innerHTML = `<div class="vendor-links">${links}</div>`;
+
+        const { data: images } = await supabaseClient
+          .from("vendor_gallery")
+          .select("*")
+          .eq("vendor_id", vendor.id);
+
+        if (images.length > 0) {
+          document.getElementById("gallerySection").style.display = "block";
+
+          images.forEach(img => {
+            document.getElementById("galleryGrid").innerHTML += `
+              <img src="${img.image_url}" onclick="openLightbox('${img.image_url}')">
+            `;
+          });
         }
-
-        if (vendor.instagram) {
-          linksHTML += `<a href="${vendor.instagram}" target="_blank">Instagram</a>`;
-        }
-
-        if (vendor.facebook) {
-          linksHTML += `<a href="${vendor.facebook}" target="_blank">Facebook</a>`;
-        }
-
-        linksHTML += '</div>';
-        linksContainer.innerHTML = linksHTML;
-
-        loadGallery(vendor.id);
       }
-    }
-
-    async function loadGallery(vendorId) {
-      const { data, error } = await supabaseClient
-        .from("vendor_gallery")
-        .select("*")
-        .eq("vendor_id", vendorId)
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        console.log("Supabase gallery error:", error);
-        return;
-      }
-
-      if (!data || data.length === 0) {
-        return;
-      }
-
-      const gallerySection = document.getElementById("gallerySection");
-      const galleryGrid = document.getElementById("galleryGrid");
-
-      gallerySection.style.display = "block";
-      galleryGrid.innerHTML = "";
-
-      data.forEach(image => {
-        galleryGrid.innerHTML += `<img src="${image.image_url}" alt="Vendor gallery image">`;
-      });
     }
 
     loadVendor();
