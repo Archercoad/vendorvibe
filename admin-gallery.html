@@ -67,17 +67,17 @@
 
   <div class="container">
     <h1>Vendor Gallery Upload</h1>
-    <p>Choose a vendor, select a photo, and upload it to their premium gallery.</p>
+    <p>Upload multiple photos to a premium vendor gallery.</p>
 
     <label for="vendorSelect">Vendor</label>
     <select id="vendorSelect">
       <option value="">Loading vendors...</option>
     </select>
 
-    <label for="photoInput">Upload Photo</label>
-    <input type="file" id="photoInput" accept="image/*">
+    <label for="photoInput">Upload Photos</label>
+    <input type="file" id="photoInput" accept="image/*" multiple>
 
-    <button id="uploadButton">Upload Image</button>
+    <button id="uploadButton">Upload Images</button>
 
     <p class="message" id="message"></p>
 
@@ -106,7 +106,6 @@
 
       if (error) {
         message.textContent = "Could not load vendors.";
-        console.log(error);
         return;
       }
 
@@ -128,7 +127,7 @@
       const vendorId = vendorSelect.value;
       const selectedOption = vendorSelect.options[vendorSelect.selectedIndex];
       const isPremium = selectedOption?.dataset?.premium === "true";
-      const file = photoInput.files[0];
+      const files = photoInput.files;
 
       if (!vendorId) {
         message.textContent = "Please select a vendor.";
@@ -140,49 +139,53 @@
         return;
       }
 
-      if (!file) {
-        message.textContent = "Please choose a photo.";
+      if (!files.length) {
+        message.textContent = "Please select at least one photo.";
         return;
       }
 
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${vendorId}-${Date.now()}.${fileExt}`;
-      const filePath = `${vendorId}/${fileName}`;
+      message.textContent = "Uploading...";
 
-      const { error: uploadError } = await supabaseClient
-        .storage
-        .from("vendor-gallery")
-        .upload(filePath, file);
+      for (let file of files) {
+        const fileExt = file.name.split(".").pop();
+        const fileName = `${vendorId}-${Date.now()}-${Math.random()}.${fileExt}`;
+        const filePath = `${vendorId}/${fileName}`;
 
-      if (uploadError) {
-        message.textContent = "Upload failed.";
-        console.log(uploadError);
-        return;
+        const { error: uploadError } = await supabaseClient
+          .storage
+          .from("vendor-gallery")
+          .upload(filePath, file);
+
+        if (uploadError) {
+          console.log(uploadError);
+          message.textContent = "Upload failed.";
+          return;
+        }
+
+        const { data: publicUrlData } = supabaseClient
+          .storage
+          .from("vendor-gallery")
+          .getPublicUrl(filePath);
+
+        const publicUrl = publicUrlData.publicUrl;
+
+        const { error: insertError } = await supabaseClient
+          .from("vendor_gallery")
+          .insert([
+            {
+              vendor_id: vendorId,
+              image_url: publicUrl
+            }
+          ]);
+
+        if (insertError) {
+          console.log(insertError);
+          message.textContent = "Image saved failed.";
+          return;
+        }
       }
 
-      const { data: publicUrlData } = supabaseClient
-        .storage
-        .from("vendor-gallery")
-        .getPublicUrl(filePath);
-
-      const publicUrl = publicUrlData.publicUrl;
-
-      const { error: insertError } = await supabaseClient
-        .from("vendor_gallery")
-        .insert([
-          {
-            vendor_id: vendorId,
-            image_url: publicUrl
-          }
-        ]);
-
-      if (insertError) {
-        message.textContent = "Image uploaded, but gallery save failed.";
-        console.log(insertError);
-        return;
-      }
-
-      message.textContent = "Image uploaded successfully!";
+      message.textContent = "All images uploaded successfully!";
       photoInput.value = "";
     });
 
