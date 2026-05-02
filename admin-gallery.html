@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Gallery Upload | VendorVibe</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background-color: #EBFCFF;
+      color: #1A0C6A;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: 60px auto;
+      background: white;
+      padding: 35px;
+      border-radius: 14px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+    }
+
+    h1 {
+      margin-top: 0;
+    }
+
+    label {
+      display: block;
+      margin-top: 20px;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+
+    select,
+    input {
+      width: 100%;
+      padding: 14px;
+      border: 1px solid #b9d8de;
+      border-radius: 8px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    button {
+      margin-top: 25px;
+      padding: 15px 25px;
+      background-color: #1A0C6A;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .message {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+
+    a {
+      color: #1A0C6A;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <h1>Vendor Gallery Upload</h1>
+    <p>Choose a vendor, select a photo, and upload it to their premium gallery.</p>
+
+    <label for="vendorSelect">Vendor</label>
+    <select id="vendorSelect">
+      <option value="">Loading vendors...</option>
+    </select>
+
+    <label for="photoInput">Upload Photo</label>
+    <input type="file" id="photoInput" accept="image/*">
+
+    <button id="uploadButton">Upload Image</button>
+
+    <p class="message" id="message"></p>
+
+    <p><a href="vendors.html">Back to Vendors</a></p>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+  <script>
+    const supabaseClient = window.supabase.createClient(
+      "https://zvoarlanqjlezqzmgwhe.supabase.co",
+      "sb_publishable_8p6mMcu2YImc5doJhMpIaA_oA1yBYu9"
+    );
+
+    const vendorSelect = document.getElementById("vendorSelect");
+    const photoInput = document.getElementById("photoInput");
+    const uploadButton = document.getElementById("uploadButton");
+    const message = document.getElementById("message");
+
+    async function loadVendors() {
+      const { data, error } = await supabaseClient
+        .from("vendors")
+        .select("id, name, is_premium")
+        .eq("status", "approved")
+        .order("name", { ascending: true });
+
+      if (error) {
+        message.textContent = "Could not load vendors.";
+        console.log(error);
+        return;
+      }
+
+      vendorSelect.innerHTML = '<option value="">Select a vendor</option>';
+
+      data.forEach(vendor => {
+        const premiumLabel = vendor.is_premium ? " — Premium" : " — Not Premium";
+        vendorSelect.innerHTML += `
+          <option value="${vendor.id}" data-premium="${vendor.is_premium}">
+            ${vendor.name}${premiumLabel}
+          </option>
+        `;
+      });
+    }
+
+    uploadButton.addEventListener("click", async function() {
+      message.textContent = "";
+
+      const vendorId = vendorSelect.value;
+      const selectedOption = vendorSelect.options[vendorSelect.selectedIndex];
+      const isPremium = selectedOption?.dataset?.premium === "true";
+      const file = photoInput.files[0];
+
+      if (!vendorId) {
+        message.textContent = "Please select a vendor.";
+        return;
+      }
+
+      if (!isPremium) {
+        message.textContent = "Only premium vendors can have gallery uploads.";
+        return;
+      }
+
+      if (!file) {
+        message.textContent = "Please choose a photo.";
+        return;
+      }
+
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${vendorId}-${Date.now()}.${fileExt}`;
+      const filePath = `${vendorId}/${fileName}`;
+
+      const { error: uploadError } = await supabaseClient
+        .storage
+        .from("vendor-gallery")
+        .upload(filePath, file);
+
+      if (uploadError) {
+        message.textContent = "Upload failed.";
+        console.log(uploadError);
+        return;
+      }
+
+      const { data: publicUrlData } = supabaseClient
+        .storage
+        .from("vendor-gallery")
+        .getPublicUrl(filePath);
+
+      const publicUrl = publicUrlData.publicUrl;
+
+      const { error: insertError } = await supabaseClient
+        .from("vendor_gallery")
+        .insert([
+          {
+            vendor_id: vendorId,
+            image_url: publicUrl
+          }
+        ]);
+
+      if (insertError) {
+        message.textContent = "Image uploaded, but gallery save failed.";
+        console.log(insertError);
+        return;
+      }
+
+      message.textContent = "Image uploaded successfully!";
+      photoInput.value = "";
+    });
+
+    loadVendors();
+  </script>
+
+</body>
+</html>
