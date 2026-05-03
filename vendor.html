@@ -294,9 +294,11 @@
         document.getElementById("vendorLinks").innerHTML = `<div class="vendor-links">${links}</div>`;
 
         const { data: images } = await supabaseClient
-          .from("vendor_gallery")
-          .select("*")
-          .eq("vendor_id", vendor.id);
+  .from("vendor_gallery")
+  .select("*")
+  .eq("vendor_id", vendor.id)
+  .order("position", { ascending: true })
+  .order("created_at", { ascending: true });
 
         if (images.length > 0) {
           document.getElementById("gallerySection").style.display = "block";
