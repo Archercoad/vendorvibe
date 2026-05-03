@@ -169,6 +169,17 @@
         .join("<br>");
     }
 
+    function getStoragePathFromPublicUrl(publicUrl) {
+      const marker = "/vendor-gallery/";
+      const index = publicUrl.indexOf(marker);
+
+      if (index === -1) {
+        return null;
+      }
+
+      return publicUrl.substring(index + marker.length);
+    }
+
     dropZone.addEventListener("click", function() {
       photoInput.click();
     });
@@ -249,28 +260,43 @@
         galleryPreview.innerHTML += `
           <div class="gallery-item">
             <img src="${image.image_url}" alt="Gallery image">
-            <button class="delete-button" onclick="deleteImage('${image.id}')">Delete</button>
+            <button class="delete-button" onclick="deleteImage('${image.id}', '${image.image_url}')">Delete</button>
           </div>
         `;
       });
     }
 
-    async function deleteImage(imageId) {
-      const confirmDelete = confirm("Delete this image from the gallery?");
+    async function deleteImage(imageId, imageUrl) {
+      const confirmDelete = confirm("Delete this image from the gallery and storage?");
       if (!confirmDelete) return;
 
-      const { error } = await supabaseClient
+      const storagePath = getStoragePathFromPublicUrl(imageUrl);
+
+      if (storagePath) {
+        const { error: storageError } = await supabaseClient
+          .storage
+          .from("vendor-gallery")
+          .remove([storagePath]);
+
+        if (storageError) {
+          message.textContent = "Storage delete failed.";
+          console.log(storageError);
+          return;
+        }
+      }
+
+      const { error: dbError } = await supabaseClient
         .from("vendor_gallery")
         .delete()
         .eq("id", imageId);
 
-      if (error) {
-        message.textContent = "Delete failed.";
-        console.log(error);
+      if (dbError) {
+        message.textContent = "Database delete failed.";
+        console.log(dbError);
         return;
       }
 
-      message.textContent = "Image deleted from gallery.";
+      message.textContent = "Image deleted from gallery and storage.";
       loadGallery(vendorSelect.value);
     }
 
