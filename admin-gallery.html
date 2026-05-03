@@ -38,13 +38,13 @@
     }
 
     button {
-      margin-top: 20px;
-      padding: 12px 20px;
+      margin-top: 10px;
+      padding: 10px 14px;
       background-color: #1A0C6A;
       color: white;
       border: none;
       border-radius: 8px;
-      font-size: 15px;
+      font-size: 14px;
       cursor: pointer;
     }
 
@@ -98,8 +98,17 @@
 
     .delete-button {
       background-color: #b00020;
-      margin-top: 10px;
       width: 100%;
+    }
+
+    .move-buttons {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .move-buttons button {
+      flex: 1;
     }
 
     a {
@@ -112,7 +121,7 @@
 
   <div class="container">
     <h1>Vendor Gallery Upload</h1>
-    <p>Upload or delete gallery photos for premium vendors.</p>
+    <p>Upload, delete, and reorder gallery photos for premium vendors.</p>
 
     <label for="vendorSelect">Vendor</label>
     <select id="vendorSelect">
@@ -157,6 +166,7 @@
     const fileList = document.getElementById("fileList");
 
     let selectedFiles = [];
+    let currentGallery = [];
 
     function updateFileList() {
       if (selectedFiles.length === 0) {
@@ -225,6 +235,7 @@
 
     async function loadGallery(vendorId) {
       galleryPreview.innerHTML = "";
+      currentGallery = [];
 
       if (!vendorId) return;
 
@@ -232,7 +243,8 @@
         .from("vendor_gallery")
         .select("*")
         .eq("vendor_id", vendorId)
-        .order("created_at", { ascending: false });
+        .order("position", { ascending: true })
+        .order("created_at", { ascending: true });
 
       if (error) {
         message.textContent = "Could not load gallery.";
@@ -245,22 +257,61 @@
         return;
       }
 
-      data.forEach(image => {
+      currentGallery = data;
+
+      data.forEach((image, index) => {
         galleryPreview.innerHTML += `
           <div class="gallery-item">
             <img src="${image.image_url}" alt="Gallery image">
+
+            <div class="move-buttons">
+              <button onclick="moveImage(${index}, -1)" ${index === 0 ? "disabled" : ""}>↑</button>
+              <button onclick="moveImage(${index}, 1)" ${index === data.length - 1 ? "disabled" : ""}>↓</button>
+            </div>
+
             <button class="delete-button" onclick="deleteImage('${image.id}', '${image.file_path}')">Delete</button>
           </div>
         `;
       });
     }
 
+    async function moveImage(index, direction) {
+      const newIndex = index + direction;
+
+      if (newIndex < 0 || newIndex >= currentGallery.length) return;
+
+      const currentImage = currentGallery[index];
+      const swapImage = currentGallery[newIndex];
+
+      const currentPosition = currentImage.position ?? index;
+      const swapPosition = swapImage.position ?? newIndex;
+
+      const { error: errorOne } = await supabaseClient
+        .from("vendor_gallery")
+        .update({ position: swapPosition })
+        .eq("id", currentImage.id);
+
+      const { error: errorTwo } = await supabaseClient
+        .from("vendor_gallery")
+        .update({ position: currentPosition })
+        .eq("id", swapImage.id);
+
+      if (errorOne || errorTwo) {
+        message.textContent = "Reorder failed.";
+        console.log(errorOne || errorTwo);
+        return;
+      }
+
+      message.textContent = "Gallery order updated.";
+      loadGallery(vendorSelect.value);
+    }
+
     async function deleteImage(imageId, filePath) {
       const confirmDelete = confirm("Delete this image from the gallery and storage?");
       if (!confirmDelete) return;
 
-      if (!filePath || filePath === "null") {
-        message.textContent = "This image does not have a file path saved. Delete it manually in Supabase.";
+      if (!filePath || filePath === "null" || filePath === "undefined") {
+        message.textContent = "This image does not have a valid file path saved.";
         return;
       }
 
@@ -319,6 +370,17 @@
 
       message.textContent = "Uploading...";
 
+      const { data: existingImages } = await supabaseClient
+        .from("vendor_gallery")
+        .select("position")
+        .eq("vendor_id", vendorId)
+        .order("position", { ascending: false })
+        .limit(1);
+
+      let nextPosition = existingImages && existingImages.length > 0
+        ? (existingImages[0].position || 0) + 1
+        : 1;
+
       for (let file of selectedFiles) {
         const fileExt = file.name.split(".").pop();
         const fileName = `${vendorId}-${Date.now()}-${Math.random()}.${fileExt}`;
@@ -348,7 +410,8 @@
             {
               vendor_id: vendorId,
               image_url: publicUrl,
-              file_path: filePath
+              file_path: filePath,
+              position: nextPosition
             }
           ]);
 
@@ -357,6 +420,8 @@
           console.log(insertError);
           return;
         }
+
+        nextPosition++;
       }
 
       message.textContent = "All images uploaded successfully!";
