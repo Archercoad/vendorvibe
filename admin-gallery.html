@@ -169,17 +169,6 @@
         .join("<br>");
     }
 
-    function getStoragePathFromPublicUrl(publicUrl) {
-      const marker = "/vendor-gallery/";
-      const index = publicUrl.indexOf(marker);
-
-      if (index === -1) {
-        return null;
-      }
-
-      return publicUrl.substring(index + marker.length);
-    }
-
     dropZone.addEventListener("click", function() {
       photoInput.click();
     });
@@ -260,29 +249,30 @@
         galleryPreview.innerHTML += `
           <div class="gallery-item">
             <img src="${image.image_url}" alt="Gallery image">
-            <button class="delete-button" onclick="deleteImage('${image.id}', '${image.image_url}')">Delete</button>
+            <button class="delete-button" onclick="deleteImage('${image.id}', '${image.file_path}')">Delete</button>
           </div>
         `;
       });
     }
 
-    async function deleteImage(imageId, imageUrl) {
+    async function deleteImage(imageId, filePath) {
       const confirmDelete = confirm("Delete this image from the gallery and storage?");
       if (!confirmDelete) return;
 
-      const storagePath = getStoragePathFromPublicUrl(imageUrl);
+      if (!filePath || filePath === "null") {
+        message.textContent = "This image does not have a file path saved. Delete it manually in Supabase.";
+        return;
+      }
 
-      if (storagePath) {
-        const { error: storageError } = await supabaseClient
-          .storage
-          .from("vendor-gallery")
-          .remove([storagePath]);
+      const { error: storageError } = await supabaseClient
+        .storage
+        .from("vendor-gallery")
+        .remove([filePath]);
 
-        if (storageError) {
-          message.textContent = "Storage delete failed.";
-          console.log(storageError);
-          return;
-        }
+      if (storageError) {
+        message.textContent = "Storage delete failed.";
+        console.log(storageError);
+        return;
       }
 
       const { error: dbError } = await supabaseClient
@@ -357,7 +347,8 @@
           .insert([
             {
               vendor_id: vendorId,
-              image_url: publicUrl
+              image_url: publicUrl,
+              file_path: filePath
             }
           ]);
 
