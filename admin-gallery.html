@@ -216,10 +216,11 @@
         .order("name", { ascending: true });
 
       if (error) {
-        message.textContent = "Could not load vendors.";
-        console.log(error);
-        return;
-      }
+  alert("Gallery error: " + error.message);
+  message.textContent = "Could not load gallery: " + error.message;
+  console.log("Gallery load error:", error);
+  return;
+}
 
       vendorSelect.innerHTML = '<option value="">Select a vendor</option>';
 
