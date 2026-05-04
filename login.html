@@ -84,9 +84,12 @@
       message.textContent = "";
 
       const { data, error } = await supabaseClient.auth.signUp({
-        email: email.value,
-        password: password.value
-      });
+  email: email.value,
+  password: password.value,
+  options: {
+    emailRedirectTo: "https://archercoad.github.io/vendorvibe/login.html"
+  }
+});
 
       if (error) {
         message.textContent = "Signup error: " + error.message;
