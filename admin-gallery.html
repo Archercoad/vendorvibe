@@ -240,11 +240,10 @@
       if (!vendorId) return;
 
       const { data, error } = await supabaseClient
-        .from("vendor_gallery")
-        .select("*")
-        .eq("vendor_id", vendorId)
-        .order("position", { ascending: true })
-        .order("created_at", { ascending: true });
+  .from("vendor_gallery")
+  .select("*")
+  .eq("vendor_id", vendorId)
+  .order("created_at", { ascending: true });
 
       if (error) {
         message.textContent = "Could not load gallery.";
@@ -252,10 +251,11 @@
         return;
       }
 
-      if (!data || data.length === 0) {
-        galleryPreview.innerHTML = "<p>No gallery images yet.</p>";
-        return;
-      }
+      if (error) {
+  message.textContent = "Could not load gallery: " + error.message;
+  console.log(error);
+  return;
+}
 
       currentGallery = data;
 
