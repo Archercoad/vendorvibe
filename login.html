@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Login | VendorVibe</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background-color: #EBFCFF;
+      color: #1A0C6A;
+    }
+
+    .container {
+      max-width: 450px;
+      margin: 80px auto;
+      background: white;
+      padding: 35px;
+      border-radius: 14px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    }
+
+    input, button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 15px;
+      border-radius: 8px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    input {
+      border: 1px solid #b9d8de;
+    }
+
+    button {
+      background-color: #1A0C6A;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    .message {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+
+    a {
+      color: #1A0C6A;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <h1>VendorVibe Login</h1>
+    <p>Sign in or create an account.</p>
+
+    <input type="email" id="email" placeholder="Email address">
+    <input type="password" id="password" placeholder="Password">
+
+    <button id="signupButton">Create Account</button>
+    <button id="loginButton">Login</button>
+
+    <p class="message" id="message"></p>
+
+    <p><a href="index.html">Back to Home</a></p>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+  <script>
+    const supabaseClient = window.supabase.createClient(
+      "https://zvoarlanqjlezqzmgwhe.supabase.co",
+      "sb_publishable_8p6mMcu2YImc5doJhMpIaA_oA1yBYu9"
+    );
+
+    const email = document.getElementById("email");
+    const password = document.getElementById("password");
+    const message = document.getElementById("message");
+
+    document.getElementById("signupButton").addEventListener("click", async function() {
+      message.textContent = "";
+
+      const { data, error } = await supabaseClient.auth.signUp({
+        email: email.value,
+        password: password.value
+      });
+
+      if (error) {
+        message.textContent = "Signup error: " + error.message;
+        return;
+      }
+
+      message.textContent = "Account created. Check your email to confirm your account.";
+    });
+
+    document.getElementById("loginButton").addEventListener("click", async function() {
+      message.textContent = "";
+
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email: email.value,
+        password: password.value
+      });
+
+      if (error) {
+        message.textContent = "Login error: " + error.message;
+        return;
+      }
+
+      message.textContent = "Logged in successfully!";
+      setTimeout(() => {
+        window.location.href = "admin-gallery.html";
+      }, 800);
+    });
+  </script>
+
+</body>
+</html>
