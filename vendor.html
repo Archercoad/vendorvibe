@@ -138,7 +138,6 @@
       cursor: pointer;
     }
 
-    /* LIGHTBOX */
     .lightbox {
       display: none;
       position: fixed;
@@ -153,8 +152,9 @@
     }
 
     .lightbox img {
-      max-width: 90%;
+      max-width: 85%;
       max-height: 85%;
+      border-radius: 12px;
     }
 
     .lightbox-close {
@@ -164,6 +164,41 @@
       font-size: 40px;
       color: white;
       cursor: pointer;
+    }
+
+    .lightbox-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 55px;
+      color: white;
+      cursor: pointer;
+      user-select: none;
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 12px;
+    }
+
+    .lightbox-arrow:hover {
+      background: rgba(255, 255, 255, 0.18);
+    }
+
+    .lightbox-prev {
+      left: 30px;
+    }
+
+    .lightbox-next {
+      right: 30px;
+    }
+
+    .lightbox-counter {
+      position: absolute;
+      bottom: 25px;
+      color: white;
+      font-size: 16px;
+      background: rgba(0,0,0,0.35);
+      padding: 8px 12px;
+      border-radius: 20px;
     }
   </style>
 </head>
@@ -228,10 +263,12 @@
     <div class="gallery-grid" id="galleryGrid"></div>
   </section>
 
-  <!-- LIGHTBOX -->
   <div class="lightbox" id="lightbox">
     <span class="lightbox-close" id="lightboxClose">&times;</span>
+    <span class="lightbox-arrow lightbox-prev" id="lightboxPrev">&#10094;</span>
     <img id="lightboxImage">
+    <span class="lightbox-arrow lightbox-next" id="lightboxNext">&#10095;</span>
+    <div class="lightbox-counter" id="lightboxCounter"></div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
@@ -242,32 +279,83 @@
       "sb_publishable_8p6mMcu2YImc5doJhMpIaA_oA1yBYu9"
     );
 
+    let galleryImages = [];
+    let currentImageIndex = 0;
+
     function createVendorId(name) {
       return name.toLowerCase().replaceAll(" ", "-");
     }
 
-    function openLightbox(url) {
-      document.getElementById("lightboxImage").src = url;
-      document.getElementById("lightbox").style.display = "flex";
+    function updateLightboxImage() {
+      const imageUrl = galleryImages[currentImageIndex];
+      document.getElementById("lightboxImage").src = imageUrl;
+      document.getElementById("lightboxCounter").textContent =
+        `${currentImageIndex + 1} / ${galleryImages.length}`;
     }
 
-    document.getElementById("lightboxClose").onclick = () => {
-      document.getElementById("lightbox").style.display = "none";
-    };
+    function openLightbox(index) {
+      currentImageIndex = index;
+      document.getElementById("lightbox").style.display = "flex";
+      updateLightboxImage();
+    }
 
-    document.getElementById("lightbox").onclick = (e) => {
-      if (e.target.id === "lightbox") {
-        document.getElementById("lightbox").style.display = "none";
+    function closeLightbox() {
+      document.getElementById("lightbox").style.display = "none";
+    }
+
+    function showNextImage() {
+      if (galleryImages.length === 0) return;
+      currentImageIndex = (currentImageIndex + 1) % galleryImages.length;
+      updateLightboxImage();
+    }
+
+    function showPreviousImage() {
+      if (galleryImages.length === 0) return;
+      currentImageIndex =
+        (currentImageIndex - 1 + galleryImages.length) % galleryImages.length;
+      updateLightboxImage();
+    }
+
+    document.getElementById("lightboxClose").addEventListener("click", closeLightbox);
+    document.getElementById("lightboxNext").addEventListener("click", showNextImage);
+    document.getElementById("lightboxPrev").addEventListener("click", showPreviousImage);
+
+    document.getElementById("lightbox").addEventListener("click", function(event) {
+      if (event.target.id === "lightbox") {
+        closeLightbox();
       }
-    };
+    });
+
+    document.addEventListener("keydown", function(event) {
+      const lightboxOpen = document.getElementById("lightbox").style.display === "flex";
+
+      if (!lightboxOpen) return;
+
+      if (event.key === "ArrowRight") {
+        showNextImage();
+      }
+
+      if (event.key === "ArrowLeft") {
+        showPreviousImage();
+      }
+
+      if (event.key === "Escape") {
+        closeLightbox();
+      }
+    });
 
     async function loadVendor() {
       const id = new URLSearchParams(window.location.search).get("id");
 
-      const { data } = await supabaseClient
+      const { data, error } = await supabaseClient
         .from("vendors")
         .select("*")
         .eq("status", "approved");
+
+      if (error) {
+        console.log("Vendor load error:", error);
+        return;
+      }
 
       const vendor = data.find(v => createVendorId(v.name) === id);
 
@@ -275,12 +363,12 @@
 
       document.getElementById("vendorName").textContent = vendor.name;
       document.getElementById("vendorTag").textContent = vendor.category;
-      document.getElementById("vendorImage").src = vendor.image;
-      document.getElementById("vendorDescription").textContent = vendor.description;
-      document.getElementById("vendorAbout").textContent = vendor.description;
-      document.getElementById("vendorEvents").textContent = vendor.category;
+      document.getElementById("vendorImage").src = vendor.image || "";
+      document.getElementById("vendorDescription").textContent = vendor.description || "";
+      document.getElementById("vendorAbout").textContent = vendor.description || "";
+      document.getElementById("vendorEvents").textContent = vendor.category || "";
       document.getElementById("vendorServices").textContent = "Full service";
-      document.getElementById("vendorLocation").textContent = vendor.city;
+      document.getElementById("vendorLocation").textContent = vendor.city || "Ontario, Canada";
 
       if (vendor.is_premium) {
         document.getElementById("premiumLabel").style.display = "inline-block";
@@ -291,21 +379,32 @@
         if (vendor.instagram) links += `<a href="${vendor.instagram}" target="_blank">Instagram</a>`;
         if (vendor.facebook) links += `<a href="${vendor.facebook}" target="_blank">Facebook</a>`;
 
-        document.getElementById("vendorLinks").innerHTML = `<div class="vendor-links">${links}</div>`;
+        if (links) {
+          document.getElementById("vendorLinks").innerHTML = `<div class="vendor-links">${links}</div>`;
+        }
 
-        const { data: images } = await supabaseClient
-  .from("vendor_gallery")
-  .select("*")
-  .eq("vendor_id", vendor.id)
-  .order("position", { ascending: true })
-  .order("created_at", { ascending: true });
+        const { data: images, error: imageError } = await supabaseClient
+          .from("vendor_gallery")
+          .select("*")
+          .eq("vendor_id", vendor.id)
+          .order("position", { ascending: true })
+          .order("created_at", { ascending: true });
 
-        if (images.length > 0) {
+        if (imageError) {
+          console.log("Gallery load error:", imageError);
+          return;
+        }
+
+        if (images && images.length > 0) {
           document.getElementById("gallerySection").style.display = "block";
+          const galleryGrid = document.getElementById("galleryGrid");
+          galleryGrid.innerHTML = "";
 
-          images.forEach(img => {
-            document.getElementById("galleryGrid").innerHTML += `
-              <img src="${img.image_url}" onclick="openLightbox('${img.image_url}')">
+          galleryImages = images.map(img => img.image_url);
+
+          images.forEach((img, index) => {
+            galleryGrid.innerHTML += `
+              <img src="${img.image_url}" onclick="openLightbox(${index})">
             `;
           });
         }
