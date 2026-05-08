@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Vendor Dashboard | VendorVibe</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background-color: #EBFCFF;
+      color: #1A0C6A;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 40px;
+      background-color: #EBFCFF;
+      border-bottom: 1px solid #d9eef2;
+    }
+
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .nav-links a {
+      margin-left: 20px;
+      text-decoration: none;
+      color: #1A0C6A;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 50px auto;
+      background: white;
+      padding: 35px;
+      border-radius: 14px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    }
+
+    h1 {
+      margin-top: 0;
+    }
+
+    label {
+      display: block;
+      margin-top: 20px;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      padding: 14px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      font-size: 16px;
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    button {
+      margin-top: 25px;
+      padding: 14px;
+      background-color: #1A0C6A;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      width: 100%;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .message {
+      margin-top: 20px;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .profile-image-preview {
+      margin-top: 20px;
+      width: 220px;
+      height: 220px;
+      object-fit: cover;
+      border-radius: 14px;
+      display: block;
+    }
+
+    .logout-button {
+      background-color: #b00020;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+
+<body>
+
+<nav class="navbar">
+  <div class="logo">VendorVibe</div>
+
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="vendors.html">Find Vendors</a>
+  </div>
+</nav>
+
+<div class="container">
+
+  <h1>Vendor Dashboard</h1>
+
+  <p>Manage your vendor profile.</p>
+
+  <form id="dashboardForm">
+
+    <label>Business Name</label>
+    <input type="text" id="name">
+
+    <label>Category</label>
+    <select id="category">
+      <option>Event Planning</option>
+      <option>Photography</option>
+      <option>Catering</option>
+      <option>Entertainment</option>
+      <option>Production</option>
+      <option>Corporate Events</option>
+      <option>Decor & Design</option>
+    </select>
+
+    <label>City</label>
+    <input type="text" id="city">
+
+    <label>Description</label>
+    <textarea id="description"></textarea>
+
+    <label>Website</label>
+    <input type="url" id="website">
+
+    <label>Instagram</label>
+    <input type="url" id="instagram">
+
+    <label>Facebook</label>
+    <input type="url" id="facebook">
+
+    <label>Profile Image URL</label>
+    <input type="url" id="image">
+
+    <img id="imagePreview" class="profile-image-preview" src="">
+
+    <button type="submit">Save Changes</button>
+
+  </form>
+
+  <button class="logout-button" id="logoutButton">Logout</button>
+
+  <p class="message" id="message"></p>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+<script>
+const supabaseClient = window.supabase.createClient(
+  "https://zvoarlanqjlezqzmgwhe.supabase.co",
+  "sb_publishable_8p6mMcu2YImc5doJhMpIaA_oA1yBYu9"
+);
+
+let vendorId = null;
+
+async function loadVendorProfile() {
+
+  const {
+    data: { user },
+    error: userError
+  } = await supabaseClient.auth.getUser();
+
+  if (userError || !user) {
+    window.location.href = "login.html";
+    return;
+  }
+
+  const { data, error } = await supabaseClient
+    .from("vendors")
+    .select("*")
+    .eq("user_id", user.id)
+    .single();
+
+  if (error || !data) {
+    document.getElementById("message").textContent =
+      "Vendor profile not found.";
+    return;
+  }
+
+  vendorId = data.id;
+
+  document.getElementById("name").value = data.name || "";
+  document.getElementById("category").value = data.category || "";
+  document.getElementById("city").value = data.city || "";
+  document.getElementById("description").value = data.description || "";
+  document.getElementById("website").value = data.website || "";
+  document.getElementById("instagram").value = data.instagram || "";
+  document.getElementById("facebook").value = data.facebook || "";
+  document.getElementById("image").value = data.image || "";
+
+  updateImagePreview();
+}
+
+function updateImagePreview() {
+  const imageUrl = document.getElementById("image").value;
+
+  if (imageUrl) {
+    document.getElementById("imagePreview").src = imageUrl;
+  } else {
+    document.getElementById("imagePreview").src = "";
+  }
+}
+
+document.getElementById("image").addEventListener("input", updateImagePreview);
+
+document.getElementById("dashboardForm").addEventListener("submit", async function(e) {
+  e.preventDefault();
+
+  const message = document.getElementById("message");
+
+  const updates = {
+    name: document.getElementById("name").value,
+    category: document.getElementById("category").value,
+    city: document.getElementById("city").value,
+    description: document.getElementById("description").value,
+    website: document.getElementById("website").value,
+    instagram: document.getElementById("instagram").value,
+    facebook: document.getElementById("facebook").value,
+    image: document.getElementById("image").value
+  };
+
+  const { error } = await supabaseClient
+    .from("vendors")
+    .update(updates)
+    .eq("id", vendorId);
+
+  if (error) {
+    message.textContent = "Save failed: " + error.message;
+    return;
+  }
+
+  message.textContent = "Profile updated successfully!";
+});
+
+document.getElementById("logoutButton").addEventListener("click", async function() {
+
+  await supabaseClient.auth.signOut();
+
+  window.location.href = "login.html";
+});
+
+loadVendorProfile();
+</script>
+
+</body>
+</html>
