@@ -92,6 +92,18 @@
       object-fit: cover;
       border-radius: 14px;
       display: block;
+      background-color: #EBFCFF;
+    }
+
+    .upload-section {
+      margin-top: 20px;
+      padding: 20px;
+      background-color: #EBFCFF;
+      border-radius: 12px;
+    }
+
+    .upload-button {
+      margin-top: 15px;
     }
 
     .logout-button {
@@ -117,6 +129,16 @@
   <h1>Vendor Dashboard</h1>
 
   <p>Manage your vendor profile.</p>
+
+  <div class="upload-section">
+    <h2>Profile Photo</h2>
+    <p>Upload the main image that appears on your vendor profile and vendor card.</p>
+
+    <input type="file" id="profileImageFile" accept="image/*">
+    <button class="upload-button" id="uploadProfileImageButton">Upload Profile Photo</button>
+
+    <img id="imagePreview" class="profile-image-preview" src="">
+  </div>
 
   <form id="dashboardForm">
 
@@ -149,11 +171,6 @@
     <label>Facebook</label>
     <input type="url" id="facebook">
 
-    <label>Profile Image URL</label>
-    <input type="url" id="image">
-
-    <img id="imagePreview" class="profile-image-preview" src="">
-
     <button type="submit">Save Changes</button>
 
   </form>
@@ -173,6 +190,7 @@ const supabaseClient = window.supabase.createClient(
 );
 
 let vendorId = null;
+let currentUserId = null;
 
 async function loadVendorProfile() {
 
@@ -185,6 +203,8 @@ async function loadVendorProfile() {
     window.location.href = "login.html";
     return;
   }
+
+  currentUserId = user.id;
 
   const { data, error } = await supabaseClient
     .from("vendors")
@@ -207,22 +227,69 @@ async function loadVendorProfile() {
   document.getElementById("website").value = data.website || "";
   document.getElementById("instagram").value = data.instagram || "";
   document.getElementById("facebook").value = data.facebook || "";
-  document.getElementById("image").value = data.image || "";
 
-  updateImagePreview();
-}
-
-function updateImagePreview() {
-  const imageUrl = document.getElementById("image").value;
-
-  if (imageUrl) {
-    document.getElementById("imagePreview").src = imageUrl;
-  } else {
-    document.getElementById("imagePreview").src = "";
+  if (data.image) {
+    document.getElementById("imagePreview").src = data.image;
   }
 }
 
-document.getElementById("image").addEventListener("input", updateImagePreview);
+document.getElementById("uploadProfileImageButton").addEventListener("click", async function() {
+  const message = document.getElementById("message");
+  const fileInput = document.getElementById("profileImageFile");
+  const file = fileInput.files[0];
+
+  message.textContent = "";
+
+  if (!vendorId || !currentUserId) {
+    message.textContent = "Vendor profile not loaded yet.";
+    return;
+  }
+
+  if (!file) {
+    message.textContent = "Please choose a profile photo.";
+    return;
+  }
+
+  message.textContent = "Uploading profile photo...";
+
+  const fileExt = file.name.split(".").pop();
+  const fileName = `${vendorId}-${Date.now()}.${fileExt}`;
+  const filePath = `${vendorId}/${fileName}`;
+
+  const { error: uploadError } = await supabaseClient
+    .storage
+    .from("vendor-profile-images")
+    .upload(filePath, file);
+
+  if (uploadError) {
+    message.textContent = "Profile photo upload failed: " + uploadError.message;
+    console.log(uploadError);
+    return;
+  }
+
+  const { data: publicUrlData } = supabaseClient
+    .storage
+    .from("vendor-profile-images")
+    .getPublicUrl(filePath);
+
+  const publicUrl = publicUrlData.publicUrl;
+
+  const { error: updateError } = await supabaseClient
+    .from("vendors")
+    .update({ image: publicUrl })
+    .eq("id", vendorId)
+    .eq("user_id", currentUserId);
+
+  if (updateError) {
+    message.textContent = "Profile photo saved, but profile update failed: " + updateError.message;
+    console.log(updateError);
+    return;
+  }
+
+  document.getElementById("imagePreview").src = publicUrl;
+  fileInput.value = "";
+  message.textContent = "Profile photo updated successfully!";
+});
 
 document.getElementById("dashboardForm").addEventListener("submit", async function(e) {
   e.preventDefault();
@@ -236,14 +303,14 @@ document.getElementById("dashboardForm").addEventListener("submit", async functi
     description: document.getElementById("description").value,
     website: document.getElementById("website").value,
     instagram: document.getElementById("instagram").value,
-    facebook: document.getElementById("facebook").value,
-    image: document.getElementById("image").value
+    facebook: document.getElementById("facebook").value
   };
 
   const { error } = await supabaseClient
     .from("vendors")
     .update(updates)
-    .eq("id", vendorId);
+    .eq("id", vendorId)
+    .eq("user_id", currentUserId);
 
   if (error) {
     message.textContent = "Save failed: " + error.message;
@@ -264,4 +331,4 @@ loadVendorProfile();
 </script>
 
 </body>
-</html>
+</html> 
