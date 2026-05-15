@@ -20,6 +20,10 @@
       box-shadow: 0 6px 18px rgba(0,0,0,0.08);
     }
 
+    h1 {
+      margin-top: 0;
+    }
+
     input, button {
       width: 100%;
       padding: 14px;
@@ -43,6 +47,7 @@
     .message {
       margin-top: 20px;
       font-weight: bold;
+      text-align: center;
     }
 
     a {
@@ -54,18 +59,28 @@
 <body>
 
   <div class="container">
+
     <h1>VendorVibe Login</h1>
-    <p>Sign in or create an account.</p>
+
+    <p>Login to your vendor dashboard.</p>
 
     <input type="email" id="email" placeholder="Email address">
+
     <input type="password" id="password" placeholder="Password">
 
-    <button id="signupButton">Create Account</button>
     <button id="loginButton">Login</button>
 
     <p class="message" id="message"></p>
 
-    <p><a href="index.html">Back to Home</a></p>
+    <p style="margin-top:25px;">
+      Need an account?
+      <a href="signup.html">Create Vendor Account</a>
+    </p>
+
+    <p>
+      <a href="index.html">Back to Home</a>
+    </p>
+
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
@@ -80,26 +95,8 @@
     const password = document.getElementById("password");
     const message = document.getElementById("message");
 
-    document.getElementById("signupButton").addEventListener("click", async function() {
-      message.textContent = "";
-
-      const { data, error } = await supabaseClient.auth.signUp({
-  email: email.value,
-  password: password.value,
-  options: {
-    emailRedirectTo: "https://archercoad.github.io/vendorvibe/login.html"
-  }
-});
-
-      if (error) {
-        message.textContent = "Signup error: " + error.message;
-        return;
-      }
-
-      message.textContent = "Account created. Check your email to confirm your account.";
-    });
-
     document.getElementById("loginButton").addEventListener("click", async function() {
+
       message.textContent = "";
 
       const { data, error } = await supabaseClient.auth.signInWithPassword({
@@ -113,9 +110,11 @@
       }
 
       message.textContent = "Logged in successfully!";
+
       setTimeout(() => {
-        window.location.href = "admin-gallery.html";
+        window.location.href = "vendor-dashboard.html";
       }, 800);
+
     });
   </script>
 
