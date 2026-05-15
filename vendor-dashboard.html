@@ -32,16 +32,12 @@
     }
 
     .container {
-      max-width: 800px;
+      max-width: 900px;
       margin: 50px auto;
       background: white;
       padding: 35px;
       border-radius: 14px;
       box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-    }
-
-    h1 {
-      margin-top: 0;
     }
 
     label {
@@ -68,8 +64,8 @@
     }
 
     button {
-      margin-top: 25px;
-      padding: 14px;
+      margin-top: 18px;
+      padding: 13px;
       background-color: #1A0C6A;
       color: white;
       border: none;
@@ -95,20 +91,84 @@
       background-color: #EBFCFF;
     }
 
-    .upload-section {
-      margin-top: 20px;
-      padding: 20px;
+    .section-box {
+      margin-top: 30px;
+      padding: 22px;
       background-color: #EBFCFF;
-      border-radius: 12px;
+      border-radius: 14px;
     }
 
-    .upload-button {
-      margin-top: 15px;
+    .premium-note {
+      padding: 18px;
+      background: white;
+      border: 2px solid #1A0C6A;
+      border-radius: 12px;
+      font-weight: bold;
+    }
+
+    .drop-zone {
+      margin-top: 12px;
+      padding: 30px;
+      border: 2px dashed #1A0C6A;
+      border-radius: 14px;
+      text-align: center;
+      background-color: white;
+      cursor: pointer;
+    }
+
+    .drop-zone.dragover {
+      background-color: #EBFCFF;
+      border-style: solid;
+    }
+
+    .file-list {
+      margin-top: 12px;
+      font-size: 14px;
+    }
+
+    .gallery-preview {
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+      margin-top: 25px;
+    }
+
+    .gallery-item {
+      width: 180px;
+      background: white;
+      padding: 10px;
+      border-radius: 12px;
+      text-align: center;
+    }
+
+    .gallery-item img {
+      width: 180px;
+      height: 180px;
+      object-fit: cover;
+      border-radius: 10px;
+      display: block;
+    }
+
+    .delete-button {
+      background-color: #b00020;
+      width: 100%;
+    }
+
+    .move-buttons {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .move-buttons button {
+      flex: 1;
+      font-size: 14px;
+      padding: 9px;
     }
 
     .logout-button {
       background-color: #b00020;
-      margin-top: 15px;
+      margin-top: 25px;
     }
   </style>
 </head>
@@ -127,59 +187,69 @@
 <div class="container">
 
   <h1>Vendor Dashboard</h1>
+  <p>Manage your vendor profile and premium gallery.</p>
 
-  <p>Manage your vendor profile.</p>
-
-  <div class="upload-section">
+  <div class="section-box">
     <h2>Profile Photo</h2>
     <p>Upload the main image that appears on your vendor profile and vendor card.</p>
 
     <input type="file" id="profileImageFile" accept="image/*">
-    <button class="upload-button" id="uploadProfileImageButton">Upload Profile Photo</button>
+    <button id="uploadProfileImageButton">Upload Profile Photo</button>
 
     <img id="imagePreview" class="profile-image-preview" src="">
   </div>
 
   <form id="dashboardForm">
 
-    <label>Business Name</label>
-    <input type="text" id="name">
+    <div class="section-box">
+      <h2>Profile Information</h2>
 
-    <label>Category</label>
-    <select id="category">
-      <option>Event Planning</option>
-      <option>Photography</option>
-      <option>Catering</option>
-      <option>Entertainment</option>
-      <option>Production</option>
-      <option>Corporate Events</option>
-      <option>Decor & Design</option>
-    </select>
+      <label>Business Name</label>
+      <input type="text" id="name">
 
-    <label>City</label>
-    <input type="text" id="city">
+      <label>Category</label>
+      <select id="category">
+        <option>Event Planning</option>
+        <option>Photography</option>
+        <option>Catering</option>
+        <option>Entertainment</option>
+        <option>Production</option>
+        <option>Corporate Events</option>
+        <option>Decor & Design</option>
+      </select>
 
-    <label>Description</label>
-    <textarea id="description"></textarea>
+      <label>City</label>
+      <input type="text" id="city">
 
-    <label>Website</label>
-    <input type="url" id="website">
+      <label>Description</label>
+      <textarea id="description"></textarea>
 
-    <label>Instagram</label>
-    <input type="url" id="instagram">
+      <label>Website</label>
+      <input type="url" id="website">
 
-    <label>Facebook</label>
-    <input type="url" id="facebook">
+      <label>Instagram</label>
+      <input type="url" id="instagram">
 
-    <button type="submit">Save Changes</button>
+      <label>Facebook</label>
+      <input type="url" id="facebook">
+
+      <button type="submit">Save Profile Changes</button>
+    </div>
 
   </form>
+
+  <div class="section-box" id="premiumGallerySection">
+    <h2>Premium Photo Gallery</h2>
+    <div id="premiumGalleryContent"></div>
+  </div>
 
   <button class="logout-button" id="logoutButton">Logout</button>
 
   <p class="message" id="message"></p>
 
 </div>
+
+<input type="file" id="galleryPhotoInput" accept="image/*" multiple style="display:none;">
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
@@ -191,9 +261,13 @@ const supabaseClient = window.supabase.createClient(
 
 let vendorId = null;
 let currentUserId = null;
+let isPremium = false;
+let selectedGalleryFiles = [];
+let currentGallery = [];
+
+const message = document.getElementById("message");
 
 async function loadVendorProfile() {
-
   const {
     data: { user },
     error: userError
@@ -213,12 +287,12 @@ async function loadVendorProfile() {
     .single();
 
   if (error || !data) {
-    document.getElementById("message").textContent =
-      "Vendor profile not found.";
+    message.textContent = "Vendor profile not found.";
     return;
   }
 
   vendorId = data.id;
+  isPremium = data.is_premium === true;
 
   document.getElementById("name").value = data.name || "";
   document.getElementById("category").value = data.category || "";
@@ -231,10 +305,277 @@ async function loadVendorProfile() {
   if (data.image) {
     document.getElementById("imagePreview").src = data.image;
   }
+
+  setupPremiumGallery();
+}
+
+function setupPremiumGallery() {
+  const container = document.getElementById("premiumGalleryContent");
+
+  if (!isPremium) {
+    container.innerHTML = `
+      <div class="premium-note">
+        Photo galleries are a premium VendorVibe feature. Upgrade to unlock gallery uploads, reordering, and enhanced profile display.
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = `
+    <p>Upload, delete, and reorder your premium gallery photos.</p>
+
+    <div class="drop-zone" id="galleryDropZone">
+      <p><strong>Drag & drop photos here</strong></p>
+      <p>or click to choose files</p>
+    </div>
+
+    <div class="file-list" id="galleryFileList">No files selected.</div>
+
+    <button id="uploadGalleryImagesButton">Upload Gallery Images</button>
+
+    <h3>Current Gallery</h3>
+    <div class="gallery-preview" id="galleryPreview"></div>
+  `;
+
+  const dropZone = document.getElementById("galleryDropZone");
+  const fileInput = document.getElementById("galleryPhotoInput");
+
+  dropZone.addEventListener("click", function() {
+    fileInput.click();
+  });
+
+  dropZone.addEventListener("dragover", function(event) {
+    event.preventDefault();
+    dropZone.classList.add("dragover");
+  });
+
+  dropZone.addEventListener("dragleave", function() {
+    dropZone.classList.remove("dragover");
+  });
+
+  dropZone.addEventListener("drop", function(event) {
+    event.preventDefault();
+    dropZone.classList.remove("dragover");
+
+    selectedGalleryFiles = Array.from(event.dataTransfer.files).filter(file =>
+      file.type.startsWith("image/")
+    );
+
+    updateGalleryFileList();
+  });
+
+  document.getElementById("uploadGalleryImagesButton").addEventListener("click", uploadGalleryImages);
+
+  loadGallery();
+}
+
+document.getElementById("galleryPhotoInput").addEventListener("change", function() {
+  selectedGalleryFiles = Array.from(this.files);
+  updateGalleryFileList();
+});
+
+function updateGalleryFileList() {
+  const fileList = document.getElementById("galleryFileList");
+
+  if (!fileList) return;
+
+  if (selectedGalleryFiles.length === 0) {
+    fileList.textContent = "No files selected.";
+    return;
+  }
+
+  fileList.innerHTML = selectedGalleryFiles
+    .map(file => `• ${file.name}`)
+    .join("<br>");
+}
+
+async function loadGallery() {
+  const galleryPreview = document.getElementById("galleryPreview");
+  if (!galleryPreview || !vendorId) return;
+
+  galleryPreview.innerHTML = "";
+  currentGallery = [];
+
+  const { data, error } = await supabaseClient
+    .from("vendor_gallery")
+    .select("*")
+    .eq("vendor_id", vendorId)
+    .order("position", { ascending: true })
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    message.textContent = "Could not load gallery: " + error.message;
+    console.log(error);
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    galleryPreview.innerHTML = "<p>No gallery images yet.</p>";
+    return;
+  }
+
+  currentGallery = data;
+
+  data.forEach((image, index) => {
+    galleryPreview.innerHTML += `
+      <div class="gallery-item">
+        <img src="${image.image_url}" alt="Gallery image">
+
+        <div class="move-buttons">
+          <button onclick="moveImage(${index}, -1)" ${index === 0 ? "disabled" : ""}>↑</button>
+          <button onclick="moveImage(${index}, 1)" ${index === data.length - 1 ? "disabled" : ""}>↓</button>
+        </div>
+
+        <button class="delete-button" onclick="deleteGalleryImage('${image.id}', '${image.file_path}')">Delete</button>
+      </div>
+    `;
+  });
+}
+
+async function uploadGalleryImages() {
+  if (!isPremium) {
+    message.textContent = "Only premium vendors can upload gallery images.";
+    return;
+  }
+
+  if (!selectedGalleryFiles.length) {
+    message.textContent = "Please select at least one gallery photo.";
+    return;
+  }
+
+  message.textContent = "Uploading gallery images...";
+
+  const { data: existingImages } = await supabaseClient
+    .from("vendor_gallery")
+    .select("position")
+    .eq("vendor_id", vendorId)
+    .order("position", { ascending: false })
+    .limit(1);
+
+  let nextPosition = existingImages && existingImages.length > 0
+    ? (existingImages[0].position || 0) + 1
+    : 1;
+
+  for (let file of selectedGalleryFiles) {
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${vendorId}-${Date.now()}-${Math.random()}.${fileExt}`;
+    const filePath = `${vendorId}/${fileName}`;
+
+    const { error: uploadError } = await supabaseClient
+      .storage
+      .from("vendor-gallery")
+      .upload(filePath, file);
+
+    if (uploadError) {
+      message.textContent = "Gallery upload failed: " + uploadError.message;
+      console.log(uploadError);
+      return;
+    }
+
+    const { data: publicUrlData } = supabaseClient
+      .storage
+      .from("vendor-gallery")
+      .getPublicUrl(filePath);
+
+    const publicUrl = publicUrlData.publicUrl;
+
+    const { error: insertError } = await supabaseClient
+      .from("vendor_gallery")
+      .insert([
+        {
+          vendor_id: vendorId,
+          image_url: publicUrl,
+          file_path: filePath,
+          position: nextPosition
+        }
+      ]);
+
+    if (insertError) {
+      message.textContent = "Gallery image save failed: " + insertError.message;
+      console.log(insertError);
+      return;
+    }
+
+    nextPosition++;
+  }
+
+  message.textContent = "Gallery images uploaded successfully!";
+  selectedGalleryFiles = [];
+  document.getElementById("galleryPhotoInput").value = "";
+  updateGalleryFileList();
+  loadGallery();
+}
+
+async function deleteGalleryImage(imageId, filePath) {
+  const confirmDelete = confirm("Delete this image from your gallery?");
+  if (!confirmDelete) return;
+
+  if (!filePath || filePath === "null" || filePath === "undefined") {
+    message.textContent = "This image does not have a valid file path.";
+    return;
+  }
+
+  const { error: storageError } = await supabaseClient
+    .storage
+    .from("vendor-gallery")
+    .remove([filePath]);
+
+  if (storageError) {
+    message.textContent = "Storage delete failed: " + storageError.message;
+    console.log(storageError);
+    return;
+  }
+
+  const { error: dbError } = await supabaseClient
+    .from("vendor_gallery")
+    .delete()
+    .eq("id", imageId)
+    .eq("vendor_id", vendorId);
+
+  if (dbError) {
+    message.textContent = "Database delete failed: " + dbError.message;
+    console.log(dbError);
+    return;
+  }
+
+  message.textContent = "Gallery image deleted.";
+  loadGallery();
+}
+
+async function moveImage(index, direction) {
+  const newIndex = index + direction;
+
+  if (newIndex < 0 || newIndex >= currentGallery.length) return;
+
+  const currentImage = currentGallery[index];
+  const swapImage = currentGallery[newIndex];
+
+  const currentPosition = currentImage.position ?? index;
+  const swapPosition = swapImage.position ?? newIndex;
+
+  const { error: errorOne } = await supabaseClient
+    .from("vendor_gallery")
+    .update({ position: swapPosition })
+    .eq("id", currentImage.id)
+    .eq("vendor_id", vendorId);
+
+  const { error: errorTwo } = await supabaseClient
+    .from("vendor_gallery")
+    .update({ position: currentPosition })
+    .eq("id", swapImage.id)
+    .eq("vendor_id", vendorId);
+
+  if (errorOne || errorTwo) {
+    message.textContent = "Reorder failed.";
+    console.log(errorOne || errorTwo);
+    return;
+  }
+
+  message.textContent = "Gallery order updated.";
+  loadGallery();
 }
 
 document.getElementById("uploadProfileImageButton").addEventListener("click", async function() {
-  const message = document.getElementById("message");
   const fileInput = document.getElementById("profileImageFile");
   const file = fileInput.files[0];
 
@@ -294,8 +635,6 @@ document.getElementById("uploadProfileImageButton").addEventListener("click", as
 document.getElementById("dashboardForm").addEventListener("submit", async function(e) {
   e.preventDefault();
 
-  const message = document.getElementById("message");
-
   const updates = {
     name: document.getElementById("name").value,
     category: document.getElementById("category").value,
@@ -321,9 +660,7 @@ document.getElementById("dashboardForm").addEventListener("submit", async functi
 });
 
 document.getElementById("logoutButton").addEventListener("click", async function() {
-
   await supabaseClient.auth.signOut();
-
   window.location.href = "login.html";
 });
 
@@ -331,4 +668,4 @@ loadVendorProfile();
 </script>
 
 </body>
-</html> 
+</html>
