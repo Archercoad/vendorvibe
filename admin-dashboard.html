@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Dashboard | VendorVibe</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background-color: #EBFCFF;
+      color: #1A0C6A;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 40px;
+      background-color: #EBFCFF;
+      border-bottom: 1px solid #d9eef2;
+    }
+
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .nav-links a {
+      margin-left: 20px;
+      text-decoration: none;
+      color: #1A0C6A;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 50px auto;
+      padding: 0 20px;
+    }
+
+    .vendor-card {
+      background: white;
+      padding: 25px;
+      border-radius: 14px;
+      margin-bottom: 20px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    }
+
+    .vendor-card h2 {
+      margin-top: 0;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 20px;
+      background: #EBFCFF;
+      border: 1px solid #1A0C6A;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+    button {
+      margin-right: 10px;
+      margin-top: 12px;
+      padding: 10px 14px;
+      background-color: #1A0C6A;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .reject {
+      background-color: #b00020;
+    }
+
+    .premium {
+      background-color: #0f766e;
+    }
+
+    .logout {
+      background-color: #b00020;
+    }
+
+    .message {
+      margin: 20px 0;
+      font-weight: bold;
+    }
+
+    .blocked {
+      background: white;
+      padding: 25px;
+      border-radius: 14px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+
+<nav class="navbar">
+  <div class="logo">VendorVibe Admin</div>
+  <div class="nav-links">
+    <a href="vendors.html">View Site</a>
+    <a href="vendor-dashboard.html">Vendor Dashboard</a>
+    <a href="login.html">Login</a>
+  </div>
+</nav>
+
+<div class="container">
+  <h1>Admin Dashboard</h1>
+  <p>Review vendors, approve listings, reject vendors, and manage premium status.</p>
+
+  <button class="logout" id="logoutButton">Logout</button>
+
+  <p class="message" id="message"></p>
+
+  <div id="vendorList"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+<script>
+const supabaseClient = window.supabase.createClient(
+  "https://zvoarlanqjlezqzmgwhe.supabase.co",
+  "sb_publishable_8p6mMcu2YImc5doJhMpIaA_oA1yBYu9"
+);
+
+const vendorList = document.getElementById("vendorList");
+const message = document.getElementById("message");
+
+let currentUser = null;
+let isAdmin = false;
+
+async function checkAdminAccess() {
+  const {
+    data: { user },
+    error: userError
+  } = await supabaseClient.auth.getUser();
+
+  if (userError || !user) {
+    window.location.href = "login.html";
+    return false;
+  }
+
+  currentUser = user;
+
+  const { data: profile, error: profileError } = await supabaseClient
+    .from("profiles")
+    .select("*")
+    .eq("user_id", user.id)
+    .single();
+
+  if (profileError || !profile || profile.is_admin !== true) {
+    vendorList.innerHTML = `
+      <div class="blocked">
+        Access denied. This page is only available to VendorVibe admins.
+      </div>
+    `;
+    return false;
+  }
+
+  isAdmin = true;
+  return true;
+}
+
+async function loadVendors() {
+  const allowed = await checkAdminAccess();
+
+  if (!allowed) return;
+
+  const { data, error } = await supabaseClient
+    .from("vendors")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    message.textContent = "Could not load vendors: " + error.message;
+    return;
+  }
+
+  vendorList.innerHTML = "";
+
+  if (!data || data.length === 0) {
+    vendorList.innerHTML = "<p>No vendors found.</p>";
+    return;
+  }
+
+  data.forEach(vendor => {
+    vendorList.innerHTML += `
+      <div class="vendor-card">
+        <span class="status">Status: ${vendor.status || "unknown"}</span>
+        <h2>${vendor.name || "Unnamed Vendor"}</h2>
+        <p><strong>Category:</strong> ${vendor.category || ""}</p>
+        <p><strong>City:</strong> ${vendor.city || ""}</p>
+        <p><strong>Email:</strong> ${vendor.email || ""}</p>
+        <p><strong>Description:</strong> ${vendor.description || ""}</p>
+        <p><strong>Premium:</strong> ${vendor.is_premium ? "Yes" : "No"}</p>
+
+        <button onclick="updateVendor('${vendor.id}', { status: 'approved' })">Approve</button>
+        <button class="reject" onclick="updateVendor('${vendor.id}', { status: 'rejected' })">Reject</button>
+        <button class="premium" onclick="updateVendor('${vendor.id}', { is_premium: ${!vendor.is_premium} })">
+          ${vendor.is_premium ? "Remove Premium" : "Make Premium"}
+        </button>
+      </div>
+    `;
+  });
+}
+
+async function updateVendor(id, updates) {
+  if (!isAdmin) {
+    message.textContent = "You do not have permission to update vendors.";
+    return;
+  }
+
+  const { error } = await supabaseClient
+    .from("vendors")
+    .update(updates)
+    .eq("id", id);
+
+  if (error) {
+    message.textContent = "Update failed: " + error.message;
+    return;
+  }
+
+  message.textContent = "Vendor updated.";
+  loadVendors();
+}
+
+document.getElementById("logoutButton").addEventListener("click", async function() {
+  await supabaseClient.auth.signOut();
+  window.location.href = "login.html";
+});
+
+loadVendors();
+</script>
+
+</body>
+</html>
