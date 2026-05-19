@@ -166,6 +166,38 @@
       padding: 9px;
     }
 
+    .inquiry-card {
+      background: white;
+      border-radius: 12px;
+      padding: 18px;
+      margin-top: 15px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+
+    .inquiry-card.unread {
+      border: 2px solid #1A0C6A;
+    }
+
+    .inquiry-card.read {
+      opacity: 0.8;
+    }
+
+    .inquiry-status {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 20px;
+      background-color: #EBFCFF;
+      border: 1px solid #1A0C6A;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .inquiry-card button {
+      width: auto;
+      padding: 10px 14px;
+      font-size: 14px;
+    }
+
     .logout-button {
       background-color: #b00020;
       margin-top: 25px;
@@ -187,7 +219,13 @@
 <div class="container">
 
   <h1>Vendor Dashboard</h1>
-  <p>Manage your vendor profile and premium gallery.</p>
+  <p>Manage your vendor profile, inquiries, and premium gallery.</p>
+
+  <div class="section-box">
+    <h2>Inbox</h2>
+    <p>View inquiries from potential clients.</p>
+    <div id="inboxList"></div>
+  </div>
 
   <div class="section-box">
     <h2>Profile Photo</h2>
@@ -306,7 +344,67 @@ async function loadVendorProfile() {
     document.getElementById("imagePreview").src = data.image;
   }
 
+  loadInbox();
   setupPremiumGallery();
+}
+
+async function loadInbox() {
+  const inboxList = document.getElementById("inboxList");
+
+  if (!vendorId) return;
+
+  const { data, error } = await supabaseClient
+    .from("vendor_inquiries")
+    .select("*")
+    .eq("vendor_id", vendorId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    inboxList.innerHTML = "<p>Could not load inquiries: " + error.message + "</p>";
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    inboxList.innerHTML = "<p>No inquiries yet.</p>";
+    return;
+  }
+
+  inboxList.innerHTML = "";
+
+  data.forEach(inquiry => {
+    const statusClass = inquiry.status === "new" ? "unread" : "read";
+
+    inboxList.innerHTML += `
+      <div class="inquiry-card ${statusClass}">
+        <span class="inquiry-status">${inquiry.status || "new"}</span>
+        <p><strong>Name:</strong> ${inquiry.client_name || ""}</p>
+        <p><strong>Email:</strong> ${inquiry.client_email || ""}</p>
+        <p><strong>Event Type:</strong> ${inquiry.event_type || ""}</p>
+        <p><strong>Message:</strong> ${inquiry.message || ""}</p>
+        <p><strong>Received:</strong> ${new Date(inquiry.created_at).toLocaleString()}</p>
+
+        ${inquiry.status === "new"
+          ? `<button onclick="markInquiryRead('${inquiry.id}')">Mark as Read</button>`
+          : ""}
+      </div>
+    `;
+  });
+}
+
+async function markInquiryRead(inquiryId) {
+  const { error } = await supabaseClient
+    .from("vendor_inquiries")
+    .update({ status: "read" })
+    .eq("id", inquiryId)
+    .eq("vendor_id", vendorId);
+
+  if (error) {
+    message.textContent = "Could not update inquiry: " + error.message;
+    return;
+  }
+
+  message.textContent = "Inquiry marked as read.";
+  loadInbox();
 }
 
 function setupPremiumGallery() {
@@ -405,7 +503,6 @@ async function loadGallery() {
 
   if (error) {
     message.textContent = "Could not load gallery: " + error.message;
-    console.log(error);
     return;
   }
 
@@ -468,7 +565,6 @@ async function uploadGalleryImages() {
 
     if (uploadError) {
       message.textContent = "Gallery upload failed: " + uploadError.message;
-      console.log(uploadError);
       return;
     }
 
@@ -492,7 +588,6 @@ async function uploadGalleryImages() {
 
     if (insertError) {
       message.textContent = "Gallery image save failed: " + insertError.message;
-      console.log(insertError);
       return;
     }
 
@@ -522,7 +617,6 @@ async function deleteGalleryImage(imageId, filePath) {
 
   if (storageError) {
     message.textContent = "Storage delete failed: " + storageError.message;
-    console.log(storageError);
     return;
   }
 
@@ -534,7 +628,6 @@ async function deleteGalleryImage(imageId, filePath) {
 
   if (dbError) {
     message.textContent = "Database delete failed: " + dbError.message;
-    console.log(dbError);
     return;
   }
 
@@ -567,7 +660,6 @@ async function moveImage(index, direction) {
 
   if (errorOne || errorTwo) {
     message.textContent = "Reorder failed.";
-    console.log(errorOne || errorTwo);
     return;
   }
 
@@ -604,7 +696,6 @@ document.getElementById("uploadProfileImageButton").addEventListener("click", as
 
   if (uploadError) {
     message.textContent = "Profile photo upload failed: " + uploadError.message;
-    console.log(uploadError);
     return;
   }
 
@@ -623,7 +714,6 @@ document.getElementById("uploadProfileImageButton").addEventListener("click", as
 
   if (updateError) {
     message.textContent = "Profile photo saved, but profile update failed: " + updateError.message;
-    console.log(updateError);
     return;
   }
 
