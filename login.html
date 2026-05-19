@@ -58,65 +58,88 @@
 
 <body>
 
-  <div class="container">
+<div class="container">
 
-    <h1>VendorVibe Login</h1>
+  <h1>VendorVibe Login</h1>
 
-    <p>Login to your vendor dashboard.</p>
+  <p>Login to your VendorVibe account.</p>
 
-    <input type="email" id="email" placeholder="Email address">
+  <input type="email" id="email" placeholder="Email address">
 
-    <input type="password" id="password" placeholder="Password">
+  <input type="password" id="password" placeholder="Password">
 
-    <button id="loginButton">Login</button>
+  <button id="loginButton">Login</button>
 
-    <p class="message" id="message"></p>
+  <p class="message" id="message"></p>
 
-    <p style="margin-top:25px;">
-      Need an account?
-      <a href="signup.html">Create Vendor Account</a>
-    </p>
+  <p style="margin-top:25px;">
+    Need an account?
+    <a href="signup.html">Create Vendor Account</a>
+  </p>
 
-    <p>
-      <a href="index.html">Back to Home</a>
-    </p>
+  <p>
+    <a href="forgot-password.html">Forgot Password?</a>
+  </p>
 
-  </div>
+  <p>
+    <a href="index.html">Back to Home</a>
+  </p>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+</div>
 
-  <script>
-    const supabaseClient = window.supabase.createClient(
-      "https://zvoarlanqjlezqzmgwhe.supabase.co",
-      "sb_publishable_8p6mMcu2YImc5doJhMpIaA_oA1yBYu9"
-    );
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
-    const email = document.getElementById("email");
-    const password = document.getElementById("password");
-    const message = document.getElementById("message");
+<script>
+const supabaseClient = window.supabase.createClient(
+  "https://zvoarlanqjlezqzmgwhe.supabase.co",
+  "sb_publishable_8p6mMcu2YImc5doJhMpIaA_oA1yBYu9"
+);
 
-    document.getElementById("loginButton").addEventListener("click", async function() {
+const email = document.getElementById("email");
+const password = document.getElementById("password");
+const message = document.getElementById("message");
 
-      message.textContent = "";
+document.getElementById("loginButton").addEventListener("click", async function() {
 
-      const { data, error } = await supabaseClient.auth.signInWithPassword({
-        email: email.value,
-        password: password.value
-      });
+  message.textContent = "";
 
-      if (error) {
-        message.textContent = "Login error: " + error.message;
-        return;
-      }
+  const { data, error } = await supabaseClient.auth.signInWithPassword({
+    email: email.value,
+    password: password.value
+  });
 
-      message.textContent = "Logged in successfully!";
+  if (error) {
+    message.textContent = "Login error: " + error.message;
+    return;
+  }
 
-      setTimeout(() => {
-        window.location.href = "vendor-dashboard.html";
-      }, 800);
+  const user = data.user;
 
-    });
-  </script>
+  const { data: profile, error: profileError } = await supabaseClient
+    .from("profiles")
+    .select("*")
+    .eq("user_id", user.id)
+    .single();
+
+  if (!profileError && profile && profile.is_admin === true) {
+
+    message.textContent = "Admin login successful!";
+
+    setTimeout(() => {
+      window.location.href = "admin-dashboard.html";
+    }, 800);
+
+    return;
+  }
+
+  message.textContent = "Login successful!";
+
+  setTimeout(() => {
+    window.location.href = "vendor-dashboard.html";
+  }, 800);
+
+});
+</script>
 
 </body>
 </html>
