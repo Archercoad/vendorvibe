@@ -138,6 +138,53 @@
       cursor: pointer;
     }
 
+    .inquiry-form {
+      background: white;
+      padding: 25px;
+      border-radius: 14px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+      margin-top: 15px;
+    }
+
+    .inquiry-form label {
+      display: block;
+      margin-top: 15px;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+
+    .inquiry-form input,
+    .inquiry-form textarea,
+    .inquiry-form select {
+      width: 100%;
+      padding: 13px;
+      border-radius: 8px;
+      border: 1px solid #b9d8de;
+      box-sizing: border-box;
+      font-size: 16px;
+    }
+
+    .inquiry-form textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .inquiry-form button {
+      margin-top: 20px;
+      padding: 14px 20px;
+      background-color: #1A0C6A;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .inquiry-message {
+      margin-top: 15px;
+      font-weight: bold;
+    }
+
     .lightbox {
       display: none;
       position: fixed;
@@ -210,7 +257,7 @@
     <div class="nav-links">
       <a href="index.html">Home</a>
       <a href="vendors.html">Find Vendors</a>
-      <a href="signup.html">For Vendors</a>
+      <a href="login.html">Login</a>
     </div>
   </nav>
 
@@ -228,7 +275,7 @@
 
       <div id="vendorLinks"></div>
 
-      <a href="signup.html" class="cta-button">Contact This Vendor</a>
+      <a href="#inquirySection" class="cta-button">Contact This Vendor</a>
     </div>
   </section>
 
@@ -263,6 +310,35 @@
     <div class="gallery-grid" id="galleryGrid"></div>
   </section>
 
+  <section class="section" id="inquirySection">
+    <h2>Contact This Vendor</h2>
+
+    <form class="inquiry-form" id="inquiryForm">
+      <label>Your Name</label>
+      <input type="text" id="clientName" required>
+
+      <label>Your Email</label>
+      <input type="email" id="clientEmail" required>
+
+      <label>Event Type</label>
+      <select id="eventType">
+        <option value="">Select an event type</option>
+        <option>Wedding</option>
+        <option>Corporate Event</option>
+        <option>Festival / Concert</option>
+        <option>Private Party</option>
+        <option>Other</option>
+      </select>
+
+      <label>Message</label>
+      <textarea id="inquiryMessage" placeholder="Tell the vendor what you’re looking for..." required></textarea>
+
+      <button type="submit">Send Inquiry</button>
+
+      <p class="inquiry-message" id="inquiryStatus"></p>
+    </form>
+  </section>
+
   <div class="lightbox" id="lightbox">
     <span class="lightbox-close" id="lightboxClose">&times;</span>
     <span class="lightbox-arrow lightbox-prev" id="lightboxPrev">&#10094;</span>
@@ -281,6 +357,7 @@
 
     let galleryImages = [];
     let currentImageIndex = 0;
+    let currentVendor = null;
 
     function createVendorId(name) {
       return name.toLowerCase().replaceAll(" ", "-");
@@ -361,6 +438,8 @@
 
       if (!vendor) return;
 
+      currentVendor = vendor;
+
       document.getElementById("vendorName").textContent = vendor.name;
       document.getElementById("vendorTag").textContent = vendor.category;
       document.getElementById("vendorImage").src = vendor.image || "";
@@ -410,6 +489,38 @@
         }
       }
     }
+
+    document.getElementById("inquiryForm").addEventListener("submit", async function(event) {
+      event.preventDefault();
+
+      const status = document.getElementById("inquiryStatus");
+
+      if (!currentVendor) {
+        status.textContent = "Vendor could not be loaded. Please try again.";
+        return;
+      }
+
+      const { error } = await supabaseClient
+        .from("vendor_inquiries")
+        .insert([
+          {
+            vendor_id: currentVendor.id,
+            client_name: document.getElementById("clientName").value,
+            client_email: document.getElementById("clientEmail").value,
+            event_type: document.getElementById("eventType").value,
+            message: document.getElementById("inquiryMessage").value,
+            status: "new"
+          }
+        ]);
+
+      if (error) {
+        status.textContent = "Inquiry could not be sent: " + error.message;
+        return;
+      }
+
+      status.textContent = "Inquiry sent successfully!";
+      document.getElementById("inquiryForm").reset();
+    });
 
     loadVendor();
   </script>
