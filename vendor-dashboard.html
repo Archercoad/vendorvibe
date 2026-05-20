@@ -2,47 +2,29 @@
 <html>
 <head>
   <title>Vendor Dashboard | VendorVibe</title>
+  <link rel="stylesheet" href="app.css">
 
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      background-color: #EBFCFF;
-      color: #1A0C6A;
+    .dashboard-page {
+      padding: 30px;
+      overflow-y: auto;
+      width: 100%;
     }
 
-    .navbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 20px 40px;
-      background-color: #EBFCFF;
-      border-bottom: 1px solid #d9eef2;
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-top: 24px;
     }
 
-    .logo {
-      font-size: 24px;
-      font-weight: bold;
-    }
-
-    .nav-links a {
-      margin-left: 20px;
-      text-decoration: none;
-      color: #1A0C6A;
-    }
-
-    .container {
-      max-width: 900px;
-      margin: 50px auto;
-      background: white;
-      padding: 35px;
-      border-radius: 14px;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    .full-width {
+      grid-column: 1 / -1;
     }
 
     label {
       display: block;
-      margin-top: 20px;
+      margin-top: 18px;
       margin-bottom: 8px;
       font-weight: bold;
     }
@@ -53,7 +35,7 @@
       width: 100%;
       padding: 14px;
       border-radius: 8px;
-      border: 1px solid #ccc;
+      border: 1px solid #ccdbe2;
       box-sizing: border-box;
       font-size: 16px;
     }
@@ -63,7 +45,7 @@
       resize: vertical;
     }
 
-    button {
+    .primary-button {
       margin-top: 18px;
       padding: 13px;
       background-color: #1A0C6A;
@@ -75,10 +57,8 @@
       cursor: pointer;
     }
 
-    .message {
-      margin-top: 20px;
-      font-weight: bold;
-      text-align: center;
+    .danger-button {
+      background-color: #b00020;
     }
 
     .profile-image-preview {
@@ -91,16 +71,15 @@
       background-color: #EBFCFF;
     }
 
-    .section-box {
-      margin-top: 30px;
-      padding: 22px;
-      background-color: #EBFCFF;
-      border-radius: 14px;
+    .dashboard-stat {
+      font-size: 28px;
+      font-weight: bold;
+      margin-top: 10px;
     }
 
     .premium-note {
       padding: 18px;
-      background: white;
+      background: #EBFCFF;
       border: 2px solid #1A0C6A;
       border-radius: 12px;
       font-weight: bold;
@@ -112,12 +91,12 @@
       border: 2px dashed #1A0C6A;
       border-radius: 14px;
       text-align: center;
-      background-color: white;
+      background-color: #EBFCFF;
       cursor: pointer;
     }
 
     .drop-zone.dragover {
-      background-color: #EBFCFF;
+      background-color: white;
       border-style: solid;
     }
 
@@ -135,7 +114,7 @@
 
     .gallery-item {
       width: 180px;
-      background: white;
+      background: #EBFCFF;
       padding: 10px;
       border-radius: 12px;
       text-align: center;
@@ -151,169 +130,148 @@
 
     .delete-button {
       background-color: #b00020;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px;
       width: 100%;
+      margin-top: 10px;
+      cursor: pointer;
     }
 
     .move-buttons {
       display: flex;
       gap: 8px;
       justify-content: center;
+      margin-top: 10px;
     }
 
     .move-buttons button {
       flex: 1;
-      font-size: 14px;
-      padding: 9px;
-    }
-
-    .inquiry-card {
-      background: white;
-      border-radius: 12px;
-      padding: 18px;
-      margin-top: 15px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-    }
-
-    .inquiry-card.unread {
-      border: 2px solid #1A0C6A;
-    }
-
-    .inquiry-card.read {
-      opacity: 0.9;
-    }
-
-    .inquiry-status {
-      display: inline-block;
-      padding: 5px 10px;
-      border-radius: 20px;
-      background-color: #EBFCFF;
-      border: 1px solid #1A0C6A;
-      font-size: 13px;
-      margin-bottom: 8px;
-    }
-
-    .inquiry-card button {
-      width: auto;
-      padding: 10px 14px;
-      font-size: 14px;
-      margin-right: 8px;
-    }
-
-    .reply-thread {
-      margin-top: 18px;
-      padding: 14px;
-      background-color: #EBFCFF;
-      border-radius: 10px;
-    }
-
-    .reply-item {
-      background: white;
-      padding: 12px;
+      background-color: #1A0C6A;
+      color: white;
+      border: none;
       border-radius: 8px;
-      margin-top: 10px;
-      border-left: 4px solid #1A0C6A;
+      padding: 9px;
+      cursor: pointer;
     }
 
-    .reply-item small {
-      display: block;
-      margin-top: 6px;
-      opacity: 0.75;
+    .message {
+      margin-top: 20px;
+      font-weight: bold;
+      text-align: center;
     }
 
-    .reply-box {
-      margin-top: 15px;
-    }
-
-    .reply-box textarea {
-      min-height: 90px;
-    }
-
-    .logout-button {
-      background-color: #b00020;
-      margin-top: 25px;
+    @media (max-width: 850px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
 
 <body>
 
-<nav class="navbar">
-  <div class="logo">VendorVibe</div>
+<header class="topbar">
+  <div class="topbar-left">
+    <div class="logo">VendorVibe</div>
 
-  <div class="nav-links">
-    <a href="index.html">Home</a>
-    <a href="vendors.html">Find Vendors</a>
+    <div class="search-bar">
+      <input type="text" placeholder="Search VendorVibe...">
+    </div>
   </div>
-</nav>
 
-<div class="container">
+  <nav class="top-nav">
+    <a href="vendor-dashboard.html" class="top-nav-item">Dashboard</a>
+    <a href="vendors.html" class="top-nav-item">Vendors</a>
+    <a href="messages.html" class="top-nav-item">
+      Messages
+      <span class="nav-badge" id="messageBadge" style="display:none;">0</span>
+    </a>
+    <a href="#" class="top-nav-item">Notifications</a>
+    <a href="vendor-dashboard.html" class="top-nav-item">Profile</a>
+    <a href="login.html" class="top-nav-item" id="logoutLink">Logout</a>
+  </nav>
+</header>
+
+<div class="dashboard-page">
 
   <h1>Vendor Dashboard</h1>
-  <p>Manage your vendor profile, inquiries, replies, and premium gallery.</p>
-
-  <div class="section-box">
-    <h2>Inbox</h2>
-    <p>View and reply to inquiries from potential clients.</p>
-    <div id="inboxList"></div>
-  </div>
-
-  <div class="section-box">
-    <h2>Profile Photo</h2>
-    <p>Upload the main image that appears on your vendor profile and vendor card.</p>
-
-    <input type="file" id="profileImageFile" accept="image/*">
-    <button id="uploadProfileImageButton">Upload Profile Photo</button>
-
-    <img id="imagePreview" class="profile-image-preview" src="">
-  </div>
-
-  <form id="dashboardForm">
-
-    <div class="section-box">
-      <h2>Profile Information</h2>
-
-      <label>Business Name</label>
-      <input type="text" id="name">
-
-      <label>Category</label>
-      <select id="category">
-        <option>Event Planning</option>
-        <option>Photography</option>
-        <option>Catering</option>
-        <option>Entertainment</option>
-        <option>Production</option>
-        <option>Corporate Events</option>
-        <option>Decor & Design</option>
-      </select>
-
-      <label>City</label>
-      <input type="text" id="city">
-
-      <label>Description</label>
-      <textarea id="description"></textarea>
-
-      <label>Website</label>
-      <input type="url" id="website">
-
-      <label>Instagram</label>
-      <input type="url" id="instagram">
-
-      <label>Facebook</label>
-      <input type="url" id="facebook">
-
-      <button type="submit">Save Profile Changes</button>
-    </div>
-
-  </form>
-
-  <div class="section-box" id="premiumGallerySection">
-    <h2>Premium Photo Gallery</h2>
-    <div id="premiumGalleryContent"></div>
-  </div>
-
-  <button class="logout-button" id="logoutButton">Logout</button>
+  <p>Manage your VendorVibe profile, premium gallery, and business presence.</p>
 
   <p class="message" id="message"></p>
+
+  <div class="dashboard-grid">
+
+    <div class="app-card">
+      <h2>Profile Status</h2>
+      <p id="statusText">Loading...</p>
+      <p id="premiumText"></p>
+    </div>
+
+    <div class="app-card">
+      <h2>Messages</h2>
+      <p>You have:</p>
+      <div class="dashboard-stat" id="unreadCount">0</div>
+      <p>unread message(s)</p>
+      <a href="messages.html">
+        <button class="primary-button">Open Messages</button>
+      </a>
+    </div>
+
+    <div class="app-card full-width">
+      <h2>Profile Photo</h2>
+      <p>Upload the main image that appears on your vendor profile and vendor card.</p>
+
+      <input type="file" id="profileImageFile" accept="image/*">
+      <button class="primary-button" id="uploadProfileImageButton">Upload Profile Photo</button>
+
+      <img id="imagePreview" class="profile-image-preview" src="">
+    </div>
+
+    <div class="app-card full-width">
+      <h2>Profile Information</h2>
+
+      <form id="dashboardForm">
+        <label>Business Name</label>
+        <input type="text" id="name">
+
+        <label>Category</label>
+        <select id="category">
+          <option>Event Planning</option>
+          <option>Photography</option>
+          <option>Catering</option>
+          <option>Entertainment</option>
+          <option>Production</option>
+          <option>Corporate Events</option>
+          <option>Decor & Design</option>
+        </select>
+
+        <label>City</label>
+        <input type="text" id="city">
+
+        <label>Description</label>
+        <textarea id="description"></textarea>
+
+        <label>Website</label>
+        <input type="url" id="website">
+
+        <label>Instagram</label>
+        <input type="url" id="instagram">
+
+        <label>Facebook</label>
+        <input type="url" id="facebook">
+
+        <button type="submit" class="primary-button">Save Profile Changes</button>
+      </form>
+    </div>
+
+    <div class="app-card full-width" id="premiumGallerySection">
+      <h2>Premium Photo Gallery</h2>
+      <div id="premiumGalleryContent"></div>
+    </div>
+
+  </div>
 
 </div>
 
@@ -332,7 +290,6 @@ let currentUserId = null;
 let isPremium = false;
 let selectedGalleryFiles = [];
 let currentGallery = [];
-let currentInquiries = [];
 
 const message = document.getElementById("message");
 
@@ -363,6 +320,12 @@ async function loadVendorProfile() {
   vendorId = data.id;
   isPremium = data.is_premium === true;
 
+  document.getElementById("statusText").textContent =
+    "Listing status: " + (data.status || "pending");
+
+  document.getElementById("premiumText").textContent =
+    isPremium ? "Premium plan: Active" : "Premium plan: Not active";
+
   document.getElementById("name").value = data.name || "";
   document.getElementById("category").value = data.category || "";
   document.getElementById("city").value = data.city || "";
@@ -375,134 +338,32 @@ async function loadVendorProfile() {
     document.getElementById("imagePreview").src = data.image;
   }
 
-  loadInbox();
+  loadUnreadCount();
   setupPremiumGallery();
 }
 
-async function loadInbox() {
-  const inboxList = document.getElementById("inboxList");
-
-  if (!vendorId) return;
-
+async function loadUnreadCount() {
   const { data, error } = await supabaseClient
     .from("vendor_inquiries")
     .select("*")
     .eq("vendor_id", vendorId)
-    .order("created_at", { ascending: false });
+    .eq("vendor_deleted", false)
+    .eq("status", "new");
 
-  if (error) {
-    inboxList.innerHTML = "<p>Could not load inquiries: " + error.message + "</p>";
-    return;
+  if (error) return;
+
+  const count = data ? data.length : 0;
+
+  document.getElementById("unreadCount").textContent = count;
+
+  const badge = document.getElementById("messageBadge");
+
+  if (count > 0) {
+    badge.style.display = "inline-block";
+    badge.textContent = count;
+  } else {
+    badge.style.display = "none";
   }
-
-  if (!data || data.length === 0) {
-    inboxList.innerHTML = "<p>No inquiries yet.</p>";
-    return;
-  }
-
-  currentInquiries = data;
-  inboxList.innerHTML = "";
-
-  for (const inquiry of data) {
-    const { data: replies, error: repliesError } = await supabaseClient
-      .from("inquiry_replies")
-      .select("*")
-      .eq("inquiry_id", inquiry.id)
-      .order("created_at", { ascending: true });
-
-    const statusClass = inquiry.status === "new" ? "unread" : "read";
-
-    let repliesHTML = "";
-
-    if (!repliesError && replies && replies.length > 0) {
-      repliesHTML = replies.map(reply => `
-        <div class="reply-item">
-          <strong>${reply.sender_type || "Vendor"}:</strong>
-          <p>${reply.message || ""}</p>
-          <small>${new Date(reply.created_at).toLocaleString()}</small>
-        </div>
-      `).join("");
-    } else {
-      repliesHTML = "<p>No replies yet.</p>";
-    }
-
-    inboxList.innerHTML += `
-      <div class="inquiry-card ${statusClass}">
-        <span class="inquiry-status">${inquiry.status || "new"}</span>
-        <p><strong>Name:</strong> ${inquiry.client_name || ""}</p>
-        <p><strong>Email:</strong> ${inquiry.client_email || ""}</p>
-        <p><strong>Event Type:</strong> ${inquiry.event_type || ""}</p>
-        <p><strong>Message:</strong> ${inquiry.message || ""}</p>
-        <p><strong>Received:</strong> ${new Date(inquiry.created_at).toLocaleString()}</p>
-
-        ${inquiry.status === "new"
-          ? `<button onclick="markInquiryRead('${inquiry.id}')">Mark as Read</button>`
-          : ""}
-
-        <div class="reply-thread">
-          <h4>Conversation</h4>
-          ${repliesHTML}
-
-          <div class="reply-box">
-            <label>Reply</label>
-            <textarea id="reply-${inquiry.id}" placeholder="Write your response..."></textarea>
-            <button onclick="sendReply('${inquiry.id}')">Send Reply</button>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-}
-
-async function markInquiryRead(inquiryId) {
-  const { error } = await supabaseClient
-    .from("vendor_inquiries")
-    .update({ status: "read" })
-    .eq("id", inquiryId)
-    .eq("vendor_id", vendorId);
-
-  if (error) {
-    message.textContent = "Could not update inquiry: " + error.message;
-    return;
-  }
-
-  message.textContent = "Inquiry marked as read.";
-  loadInbox();
-}
-
-async function sendReply(inquiryId) {
-  const replyBox = document.getElementById(`reply-${inquiryId}`);
-  const replyMessage = replyBox.value;
-
-  if (!replyMessage.trim()) {
-    message.textContent = "Please type a reply before sending.";
-    return;
-  }
-
-  const { error } = await supabaseClient
-    .from("inquiry_replies")
-    .insert([
-      {
-        inquiry_id: inquiryId,
-        sender_type: "vendor",
-        message: replyMessage
-      }
-    ]);
-
-  if (error) {
-    message.textContent = "Reply could not be sent: " + error.message;
-    return;
-  }
-
-  await supabaseClient
-    .from("vendor_inquiries")
-    .update({ status: "read" })
-    .eq("id", inquiryId)
-    .eq("vendor_id", vendorId);
-
-  message.textContent = "Reply sent.";
-  replyBox.value = "";
-  loadInbox();
 }
 
 function setupPremiumGallery() {
@@ -527,7 +388,7 @@ function setupPremiumGallery() {
 
     <div class="file-list" id="galleryFileList">No files selected.</div>
 
-    <button id="uploadGalleryImagesButton">Upload Gallery Images</button>
+    <button class="primary-button" id="uploadGalleryImagesButton">Upload Gallery Images</button>
 
     <h3>Current Gallery</h3>
     <div class="gallery-preview" id="galleryPreview"></div>
@@ -703,11 +564,6 @@ async function deleteGalleryImage(imageId, filePath) {
   const confirmDelete = confirm("Delete this image from your gallery?");
   if (!confirmDelete) return;
 
-  if (!filePath || filePath === "null" || filePath === "undefined") {
-    message.textContent = "This image does not have a valid file path.";
-    return;
-  }
-
   const { error: storageError } = await supabaseClient
     .storage
     .from("vendor-gallery")
@@ -770,11 +626,6 @@ document.getElementById("uploadProfileImageButton").addEventListener("click", as
   const file = fileInput.files[0];
 
   message.textContent = "";
-
-  if (!vendorId || !currentUserId) {
-    message.textContent = "Vendor profile not loaded yet.";
-    return;
-  }
 
   if (!file) {
     message.textContent = "Please choose a profile photo.";
@@ -847,7 +698,8 @@ document.getElementById("dashboardForm").addEventListener("submit", async functi
   message.textContent = "Profile updated successfully!";
 });
 
-document.getElementById("logoutButton").addEventListener("click", async function() {
+document.getElementById("logoutLink").addEventListener("click", async function(event) {
+  event.preventDefault();
   await supabaseClient.auth.signOut();
   window.location.href = "login.html";
 });
