@@ -127,10 +127,11 @@ async function initMessages() {
 
 async function loadInquiries() {
   const { data, error } = await supabaseClient
-    .from("vendor_inquiries")
-    .select("*")
-    .eq("vendor_id", vendorId)
-    .order("created_at", { ascending: false });
+  .from("vendor_inquiries")
+  .select("*")
+  .eq("vendor_id", vendorId)
+  .eq("vendor_deleted", false)
+  .order("created_at", { ascending: false });
 
   if (error) {
     conversationList.innerHTML = "<p style='padding:20px;'>Could not load messages: " + error.message + "</p>";
@@ -175,9 +176,24 @@ function renderConversationList(list) {
           </div>
 
           <div class="conversation-preview">
-            ${inquiry.message || ""}
-          </div>
-        </div>
+  ${inquiry.message || ""}
+</div>
+
+<div style="margin-top:10px;">
+  <button
+    onclick="deleteConversation(event, '${inquiry.id}')"
+    style="
+      background:#b00020;
+      color:white;
+      border:none;
+      border-radius:8px;
+      padding:6px 10px;
+      cursor:pointer;
+      font-size:12px;
+    ">
+    Delete
+  </button>
+</div>
 
         ${isUnread ? '<div class="unread-dot"></div>' : ''}
       </div>
@@ -327,6 +343,51 @@ document.getElementById("logoutLink").addEventListener("click", async function(e
   await supabaseClient.auth.signOut();
   window.location.href = "login.html";
 });
+
+async function deleteConversation(event, inquiryId) {
+
+  event.stopPropagation();
+
+  const confirmed = confirm(
+    "Delete this conversation from your inbox?"
+  );
+
+  if (!confirmed) return;
+
+  const { error } = await supabaseClient
+    .from("vendor_inquiries")
+    .update({
+      vendor_deleted: true
+    })
+    .eq("id", inquiryId)
+    .eq("vendor_id", vendorId);
+
+  if (error) {
+    alert("Could not delete conversation: " + error.message);
+    return;
+  }
+
+  if (activeInquiry && activeInquiry.id === inquiryId) {
+
+    activeInquiry = null;
+
+    activeName.textContent = "Select a conversation";
+
+    activeSubtitle.textContent =
+      "Your messages will appear here.";
+
+    messageThread.innerHTML = `
+      <div class="app-card">
+        Select a message from the left to view the conversation.
+      </div>
+    `;
+
+    replyBox.disabled = true;
+    sendButton.disabled = true;
+  }
+
+  await loadInquiries();
+}
 
 function formatTime(dateString) {
   const date = new Date(dateString);
