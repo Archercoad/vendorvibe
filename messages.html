@@ -45,7 +45,7 @@
 
   <main class="main-panel">
 
-    <div class="main-header" id="conversationHeader">
+    <div class="main-header">
       <div class="main-header-left">
         <div class="main-avatar"></div>
         <div>
@@ -121,17 +121,16 @@ async function initMessages() {
   }
 
   vendorId = vendor.id;
-
   await loadInquiries();
 }
 
 async function loadInquiries() {
   const { data, error } = await supabaseClient
-  .from("vendor_inquiries")
-  .select("*")
-  .eq("vendor_id", vendorId)
-  .eq("vendor_deleted", false)
-  .order("created_at", { ascending: false });
+    .from("vendor_inquiries")
+    .select("*")
+    .eq("vendor_id", vendorId)
+    .eq("vendor_deleted", false)
+    .order("created_at", { ascending: false });
 
   if (error) {
     conversationList.innerHTML = "<p style='padding:20px;'>Could not load messages: " + error.message + "</p>";
@@ -139,17 +138,8 @@ async function loadInquiries() {
   }
 
   inquiries = data || [];
-
   renderConversationList(inquiries);
-
-  const unreadCount = inquiries.filter(i => i.status === "new").length;
-
-  if (unreadCount > 0) {
-    messageBadge.style.display = "inline-block";
-    messageBadge.textContent = unreadCount;
-  } else {
-    messageBadge.style.display = "none";
-  }
+  updateUnreadBadge();
 }
 
 function renderConversationList(list) {
@@ -167,35 +157,37 @@ function renderConversationList(list) {
 
     conversationList.innerHTML += `
       <div class="conversation-item ${isActive ? "active" : ""}" onclick="openConversation('${inquiry.id}')">
-        <div class="conversation-avatar"></div>
+        <div style="display:flex; gap:14px; width:100%;">
+          <div class="conversation-avatar"></div>
 
-        <div class="conversation-content">
-          <div class="conversation-top">
-            <div class="conversation-name">${inquiry.client_name || "Unknown Client"}</div>
-            <div class="conversation-time">${time}</div>
+          <div class="conversation-content">
+            <div class="conversation-top">
+              <div class="conversation-name">${inquiry.client_name || "Unknown Client"}</div>
+              <div class="conversation-time">${time}</div>
+            </div>
+
+            <div class="conversation-preview">
+              ${inquiry.message || ""}
+            </div>
+
+            <button
+              onclick="deleteConversation(event, '${inquiry.id}')"
+              style="
+                margin-top:10px;
+                background:#b00020;
+                color:white;
+                border:none;
+                border-radius:8px;
+                padding:6px 10px;
+                cursor:pointer;
+                font-size:12px;
+              ">
+              Delete
+            </button>
           </div>
 
-          <div class="conversation-preview">
-  ${inquiry.message || ""}
-</div>
-
-<div style="margin-top:10px;">
-  <button
-    onclick="deleteConversation(event, '${inquiry.id}')"
-    style="
-      background:#b00020;
-      color:white;
-      border:none;
-      border-radius:8px;
-      padding:6px 10px;
-      cursor:pointer;
-      font-size:12px;
-    ">
-    Delete
-  </button>
-</div>
-
-        ${isUnread ? '<div class="unread-dot"></div>' : ''}
+          ${isUnread ? '<div class="unread-dot"></div>' : ''}
+        </div>
       </div>
     `;
   });
@@ -275,14 +267,44 @@ async function markAsRead(inquiryId) {
 
   if (!error) {
     inquiry.status = "read";
-    const unreadCount = inquiries.filter(i => i.status === "new").length;
-    if (unreadCount > 0) {
-      messageBadge.style.display = "inline-block";
-      messageBadge.textContent = unreadCount;
-    } else {
-      messageBadge.style.display = "none";
-    }
+    updateUnreadBadge();
   }
+}
+
+async function deleteConversation(event, inquiryId) {
+  event.stopPropagation();
+
+  const confirmed = confirm("Delete this conversation from your inbox?");
+  if (!confirmed) return;
+
+  const { error } = await supabaseClient
+    .from("vendor_inquiries")
+    .update({ vendor_deleted: true })
+    .eq("id", inquiryId)
+    .eq("vendor_id", vendorId);
+
+  if (error) {
+    alert("Could not delete conversation: " + error.message);
+    return;
+  }
+
+  if (activeInquiry && activeInquiry.id === inquiryId) {
+    activeInquiry = null;
+    activeName.textContent = "Select a conversation";
+    activeSubtitle.textContent = "Your messages will appear here.";
+
+    messageThread.innerHTML = `
+      <div class="app-card">
+        Select a message from the left to view the conversation.
+      </div>
+    `;
+
+    replyBox.disabled = true;
+    sendButton.disabled = true;
+    replyBox.value = "";
+  }
+
+  await loadInquiries();
 }
 
 sendButton.addEventListener("click", async function() {
@@ -308,25 +330,19 @@ sendButton.addEventListener("click", async function() {
   }
 
   replyBox.value = "";
-
   await loadConversationThread(activeInquiry);
 });
 
 document.getElementById("sidebarSearch").addEventListener("input", function() {
-  const search = this.value.toLowerCase();
-
-  const filtered = inquiries.filter(inquiry =>
-    (inquiry.client_name || "").toLowerCase().includes(search) ||
-    (inquiry.client_email || "").toLowerCase().includes(search) ||
-    (inquiry.message || "").toLowerCase().includes(search) ||
-    (inquiry.event_type || "").toLowerCase().includes(search)
-  );
-
-  renderConversationList(filtered);
+  filterConversations(this.value);
 });
 
 document.getElementById("searchInput").addEventListener("input", function() {
-  const search = this.value.toLowerCase();
+  filterConversations(this.value);
+});
+
+function filterConversations(searchValue) {
+  const search = searchValue.toLowerCase();
 
   const filtered = inquiries.filter(inquiry =>
     (inquiry.client_name || "").toLowerCase().includes(search) ||
@@ -336,58 +352,24 @@ document.getElementById("searchInput").addEventListener("input", function() {
   );
 
   renderConversationList(filtered);
-});
+}
+
+function updateUnreadBadge() {
+  const unreadCount = inquiries.filter(i => i.status === "new").length;
+
+  if (unreadCount > 0) {
+    messageBadge.style.display = "inline-block";
+    messageBadge.textContent = unreadCount;
+  } else {
+    messageBadge.style.display = "none";
+  }
+}
 
 document.getElementById("logoutLink").addEventListener("click", async function(event) {
   event.preventDefault();
   await supabaseClient.auth.signOut();
   window.location.href = "login.html";
 });
-
-async function deleteConversation(event, inquiryId) {
-
-  event.stopPropagation();
-
-  const confirmed = confirm(
-    "Delete this conversation from your inbox?"
-  );
-
-  if (!confirmed) return;
-
-  const { error } = await supabaseClient
-    .from("vendor_inquiries")
-    .update({
-      vendor_deleted: true
-    })
-    .eq("id", inquiryId)
-    .eq("vendor_id", vendorId);
-
-  if (error) {
-    alert("Could not delete conversation: " + error.message);
-    return;
-  }
-
-  if (activeInquiry && activeInquiry.id === inquiryId) {
-
-    activeInquiry = null;
-
-    activeName.textContent = "Select a conversation";
-
-    activeSubtitle.textContent =
-      "Your messages will appear here.";
-
-    messageThread.innerHTML = `
-      <div class="app-card">
-        Select a message from the left to view the conversation.
-      </div>
-    `;
-
-    replyBox.disabled = true;
-    sendButton.disabled = true;
-  }
-
-  await loadInquiries();
-}
 
 function formatTime(dateString) {
   const date = new Date(dateString);
