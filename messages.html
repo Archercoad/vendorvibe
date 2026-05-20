@@ -2,244 +2,348 @@
 <html>
 <head>
   <title>Messages | VendorVibe</title>
-
   <link rel="stylesheet" href="app.css">
 </head>
 
 <body>
 
-  <!-- TOP NAVIGATION -->
+<header class="topbar">
+  <div class="topbar-left">
+    <div class="logo">VendorVibe</div>
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="Search conversations...">
+    </div>
+  </div>
 
-  <header class="topbar">
+  <nav class="top-nav">
+    <a href="vendor-dashboard.html" class="top-nav-item">Dashboard</a>
+    <a href="vendors.html" class="top-nav-item">Vendors</a>
+    <a href="messages.html" class="top-nav-item">
+      Messages
+      <span class="nav-badge" id="messageBadge" style="display:none;">0</span>
+    </a>
+    <a href="#" class="top-nav-item">Notifications</a>
+    <a href="vendor-dashboard.html" class="top-nav-item">Profile</a>
+    <a href="login.html" class="top-nav-item" id="logoutLink">Logout</a>
+  </nav>
+</header>
 
-    <div class="topbar-left">
+<div class="app-layout">
 
-      <div class="logo">VendorVibe</div>
-
-      <div class="search-bar">
-        <input type="text" placeholder="Search conversations...">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h2>Messages</h2>
+      <div class="sidebar-search">
+        <input type="text" id="sidebarSearch" placeholder="Search inbox">
       </div>
-
     </div>
 
-    <nav class="top-nav">
+    <div class="conversation-list" id="conversationList">
+      <p style="padding:20px;">Loading conversations...</p>
+    </div>
+  </aside>
 
-      <a href="#" class="top-nav-item">
-        Dashboard
-      </a>
+  <main class="main-panel">
 
-      <a href="vendors.html" class="top-nav-item">
-        Vendors
-      </a>
-
-      <a href="messages.html" class="top-nav-item">
-        Messages
-        <span class="nav-badge">2</span>
-      </a>
-
-      <a href="#" class="top-nav-item">
-        Notifications
-      </a>
-
-      <a href="#" class="top-nav-item">
-        Profile
-      </a>
-
-      <a href="login.html" class="top-nav-item">
-        Logout
-      </a>
-
-    </nav>
-
-  </header>
-
-  <!-- MAIN APP LAYOUT -->
-
-  <div class="app-layout">
-
-    <!-- LEFT SIDEBAR -->
-
-    <aside class="sidebar">
-
-      <div class="sidebar-header">
-
-        <h2>Messages</h2>
-
-        <div class="sidebar-search">
-          <input type="text" placeholder="Search inbox">
+    <div class="main-header" id="conversationHeader">
+      <div class="main-header-left">
+        <div class="main-avatar"></div>
+        <div>
+          <div class="main-name" id="activeName">Select a conversation</div>
+          <div class="main-subtitle" id="activeSubtitle">Your messages will appear here.</div>
         </div>
-
       </div>
+    </div>
 
-      <!-- CONVERSATION LIST -->
-
-      <div class="conversation-list">
-
-        <div class="conversation-item active">
-
-          <div class="conversation-avatar"></div>
-
-          <div class="conversation-content">
-
-            <div class="conversation-top">
-
-              <div class="conversation-name">
-                Sarah Johnson
-              </div>
-
-              <div class="conversation-time">
-                2m
-              </div>
-
-            </div>
-
-            <div class="conversation-preview">
-              Hi! I was wondering if you're available for our wedding next August...
-            </div>
-
-          </div>
-
-          <div class="unread-dot"></div>
-
-        </div>
-
-        <div class="conversation-item">
-
-          <div class="conversation-avatar"></div>
-
-          <div class="conversation-content">
-
-            <div class="conversation-top">
-
-              <div class="conversation-name">
-                Kingston Events Co.
-              </div>
-
-              <div class="conversation-time">
-                1h
-              </div>
-
-            </div>
-
-            <div class="conversation-preview">
-              Thanks for sending over your pricing guide.
-            </div>
-
-          </div>
-
-        </div>
-
-        <div class="conversation-item">
-
-          <div class="conversation-avatar"></div>
-
-          <div class="conversation-content">
-
-            <div class="conversation-top">
-
-              <div class="conversation-name">
-                Emily & Carter
-              </div>
-
-              <div class="conversation-time">
-                Yesterday
-              </div>
-
-            </div>
-
-            <div class="conversation-preview">
-              We'd love to book you for our engagement party.
-            </div>
-
-          </div>
-
-        </div>
-
+    <div class="message-thread" id="messageThread">
+      <div class="app-card">
+        Select a message from the left to view the conversation.
       </div>
+    </div>
 
-    </aside>
+    <div class="message-composer">
+      <textarea id="replyBox" placeholder="Write a message..." disabled></textarea>
 
-    <!-- MAIN CONVERSATION PANEL -->
-
-    <main class="main-panel">
-
-      <!-- CONVERSATION HEADER -->
-
-      <div class="main-header">
-
-        <div class="main-header-left">
-
-          <div class="main-avatar"></div>
-
-          <div>
-
-            <div class="main-name">
-              Sarah Johnson
-            </div>
-
-            <div class="main-subtitle">
-              Wedding Inquiry • August 2027
-            </div>
-
-          </div>
-
-        </div>
-
+      <div class="composer-actions">
+        <button class="send-button" id="sendButton" disabled>
+          Send Message
+        </button>
       </div>
+    </div>
 
-      <!-- MESSAGE THREAD -->
+  </main>
 
-      <div class="message-thread">
+</div>
 
-        <div class="message-bubble client">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
-          Hi! I was wondering if you're available for our wedding next August in Kingston.
+<script>
+const supabaseClient = window.supabase.createClient(
+  "https://zvoarlanqjlezqzmgwhe.supabase.co",
+  "sb_publishable_8p6mMcu2YImc5doJhMpIaA_oA1yBYu9"
+);
 
-          <div class="message-time">
-            Today • 9:14 AM
+let currentUserId = null;
+let vendorId = null;
+let inquiries = [];
+let activeInquiry = null;
+
+const conversationList = document.getElementById("conversationList");
+const messageThread = document.getElementById("messageThread");
+const activeName = document.getElementById("activeName");
+const activeSubtitle = document.getElementById("activeSubtitle");
+const replyBox = document.getElementById("replyBox");
+const sendButton = document.getElementById("sendButton");
+const messageBadge = document.getElementById("messageBadge");
+
+async function initMessages() {
+  const {
+    data: { user },
+    error: userError
+  } = await supabaseClient.auth.getUser();
+
+  if (userError || !user) {
+    window.location.href = "login.html";
+    return;
+  }
+
+  currentUserId = user.id;
+
+  const { data: vendor, error: vendorError } = await supabaseClient
+    .from("vendors")
+    .select("*")
+    .eq("user_id", currentUserId)
+    .single();
+
+  if (vendorError || !vendor) {
+    conversationList.innerHTML = "<p style='padding:20px;'>Vendor profile not found.</p>";
+    return;
+  }
+
+  vendorId = vendor.id;
+
+  await loadInquiries();
+}
+
+async function loadInquiries() {
+  const { data, error } = await supabaseClient
+    .from("vendor_inquiries")
+    .select("*")
+    .eq("vendor_id", vendorId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    conversationList.innerHTML = "<p style='padding:20px;'>Could not load messages: " + error.message + "</p>";
+    return;
+  }
+
+  inquiries = data || [];
+
+  renderConversationList(inquiries);
+
+  const unreadCount = inquiries.filter(i => i.status === "new").length;
+
+  if (unreadCount > 0) {
+    messageBadge.style.display = "inline-block";
+    messageBadge.textContent = unreadCount;
+  } else {
+    messageBadge.style.display = "none";
+  }
+}
+
+function renderConversationList(list) {
+  conversationList.innerHTML = "";
+
+  if (!list.length) {
+    conversationList.innerHTML = "<p style='padding:20px;'>No messages yet.</p>";
+    return;
+  }
+
+  list.forEach(inquiry => {
+    const isActive = activeInquiry && activeInquiry.id === inquiry.id;
+    const isUnread = inquiry.status === "new";
+    const time = formatTime(inquiry.created_at);
+
+    conversationList.innerHTML += `
+      <div class="conversation-item ${isActive ? "active" : ""}" onclick="openConversation('${inquiry.id}')">
+        <div class="conversation-avatar"></div>
+
+        <div class="conversation-content">
+          <div class="conversation-top">
+            <div class="conversation-name">${inquiry.client_name || "Unknown Client"}</div>
+            <div class="conversation-time">${time}</div>
           </div>
 
-        </div>
-
-        <div class="message-bubble vendor">
-
-          Hi Sarah! Thanks so much for reaching out. Yes, I still have availability in August 2027. I'd love to hear more details about your day.
-
-          <div class="message-time">
-            Today • 9:20 AM
+          <div class="conversation-preview">
+            ${inquiry.message || ""}
           </div>
-
         </div>
 
-        <div class="message-bubble client">
-
-          Amazing! We're planning roughly 120 guests at a waterfront venue.
-
-          <div class="message-time">
-            Today • 9:22 AM
-          </div>
-
-        </div>
-
+        ${isUnread ? '<div class="unread-dot"></div>' : ''}
       </div>
+    `;
+  });
+}
 
-      <!-- MESSAGE COMPOSER -->
+async function openConversation(inquiryId) {
+  activeInquiry = inquiries.find(i => i.id === inquiryId);
 
-      <div class="message-composer">
+  if (!activeInquiry) return;
 
-        <textarea placeholder="Write a message..."></textarea>
+  activeName.textContent = activeInquiry.client_name || "Unknown Client";
+  activeSubtitle.textContent =
+    `${activeInquiry.event_type || "Inquiry"} • ${activeInquiry.client_email || ""}`;
 
-        <div class="composer-actions">
-          <button class="send-button">
-            Send Message
-          </button>
-        </div>
+  replyBox.disabled = false;
+  sendButton.disabled = false;
 
+  await markAsRead(activeInquiry.id);
+  await loadConversationThread(activeInquiry);
+
+  renderConversationList(inquiries);
+}
+
+async function loadConversationThread(inquiry) {
+  messageThread.innerHTML = "";
+
+  messageThread.innerHTML += `
+    <div class="message-bubble client">
+      ${inquiry.message || ""}
+      <div class="message-time">
+        ${inquiry.client_name || "Client"} • ${new Date(inquiry.created_at).toLocaleString()}
       </div>
+    </div>
+  `;
 
-    </main>
+  const { data: replies, error } = await supabaseClient
+    .from("inquiry_replies")
+    .select("*")
+    .eq("inquiry_id", inquiry.id)
+    .order("created_at", { ascending: true });
 
-  </div>
+  if (error) {
+    messageThread.innerHTML += `
+      <div class="app-card">
+        Could not load replies: ${error.message}
+      </div>
+    `;
+    return;
+  }
+
+  replies.forEach(reply => {
+    const bubbleClass = reply.sender_type === "vendor" ? "vendor" : "client";
+
+    messageThread.innerHTML += `
+      <div class="message-bubble ${bubbleClass}">
+        ${reply.message || ""}
+        <div class="message-time">
+          ${reply.sender_type || "message"} • ${new Date(reply.created_at).toLocaleString()}
+        </div>
+      </div>
+    `;
+  });
+
+  messageThread.scrollTop = messageThread.scrollHeight;
+}
+
+async function markAsRead(inquiryId) {
+  const inquiry = inquiries.find(i => i.id === inquiryId);
+
+  if (!inquiry || inquiry.status !== "new") return;
+
+  const { error } = await supabaseClient
+    .from("vendor_inquiries")
+    .update({ status: "read" })
+    .eq("id", inquiryId)
+    .eq("vendor_id", vendorId);
+
+  if (!error) {
+    inquiry.status = "read";
+    const unreadCount = inquiries.filter(i => i.status === "new").length;
+    if (unreadCount > 0) {
+      messageBadge.style.display = "inline-block";
+      messageBadge.textContent = unreadCount;
+    } else {
+      messageBadge.style.display = "none";
+    }
+  }
+}
+
+sendButton.addEventListener("click", async function() {
+  if (!activeInquiry) return;
+
+  const text = replyBox.value.trim();
+
+  if (!text) return;
+
+  const { error } = await supabaseClient
+    .from("inquiry_replies")
+    .insert([
+      {
+        inquiry_id: activeInquiry.id,
+        sender_type: "vendor",
+        message: text
+      }
+    ]);
+
+  if (error) {
+    alert("Reply could not be sent: " + error.message);
+    return;
+  }
+
+  replyBox.value = "";
+
+  await loadConversationThread(activeInquiry);
+});
+
+document.getElementById("sidebarSearch").addEventListener("input", function() {
+  const search = this.value.toLowerCase();
+
+  const filtered = inquiries.filter(inquiry =>
+    (inquiry.client_name || "").toLowerCase().includes(search) ||
+    (inquiry.client_email || "").toLowerCase().includes(search) ||
+    (inquiry.message || "").toLowerCase().includes(search) ||
+    (inquiry.event_type || "").toLowerCase().includes(search)
+  );
+
+  renderConversationList(filtered);
+});
+
+document.getElementById("searchInput").addEventListener("input", function() {
+  const search = this.value.toLowerCase();
+
+  const filtered = inquiries.filter(inquiry =>
+    (inquiry.client_name || "").toLowerCase().includes(search) ||
+    (inquiry.client_email || "").toLowerCase().includes(search) ||
+    (inquiry.message || "").toLowerCase().includes(search) ||
+    (inquiry.event_type || "").toLowerCase().includes(search)
+  );
+
+  renderConversationList(filtered);
+});
+
+document.getElementById("logoutLink").addEventListener("click", async function(event) {
+  event.preventDefault();
+  await supabaseClient.auth.signOut();
+  window.location.href = "login.html";
+});
+
+function formatTime(dateString) {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMinutes = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMinutes / 60);
+
+  if (diffMinutes < 1) return "now";
+  if (diffMinutes < 60) return diffMinutes + "m";
+  if (diffHours < 24) return diffHours + "h";
+
+  return date.toLocaleDateString();
+}
+
+initMessages();
+</script>
 
 </body>
 </html>
