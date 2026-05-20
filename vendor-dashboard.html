@@ -179,7 +179,7 @@
     }
 
     .inquiry-card.read {
-      opacity: 0.8;
+      opacity: 0.9;
     }
 
     .inquiry-status {
@@ -196,6 +196,36 @@
       width: auto;
       padding: 10px 14px;
       font-size: 14px;
+      margin-right: 8px;
+    }
+
+    .reply-thread {
+      margin-top: 18px;
+      padding: 14px;
+      background-color: #EBFCFF;
+      border-radius: 10px;
+    }
+
+    .reply-item {
+      background: white;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 10px;
+      border-left: 4px solid #1A0C6A;
+    }
+
+    .reply-item small {
+      display: block;
+      margin-top: 6px;
+      opacity: 0.75;
+    }
+
+    .reply-box {
+      margin-top: 15px;
+    }
+
+    .reply-box textarea {
+      min-height: 90px;
     }
 
     .logout-button {
@@ -219,11 +249,11 @@
 <div class="container">
 
   <h1>Vendor Dashboard</h1>
-  <p>Manage your vendor profile, inquiries, and premium gallery.</p>
+  <p>Manage your vendor profile, inquiries, replies, and premium gallery.</p>
 
   <div class="section-box">
     <h2>Inbox</h2>
-    <p>View inquiries from potential clients.</p>
+    <p>View and reply to inquiries from potential clients.</p>
     <div id="inboxList"></div>
   </div>
 
@@ -302,6 +332,7 @@ let currentUserId = null;
 let isPremium = false;
 let selectedGalleryFiles = [];
 let currentGallery = [];
+let currentInquiries = [];
 
 const message = document.getElementById("message");
 
@@ -369,10 +400,31 @@ async function loadInbox() {
     return;
   }
 
+  currentInquiries = data;
   inboxList.innerHTML = "";
 
-  data.forEach(inquiry => {
+  for (const inquiry of data) {
+    const { data: replies, error: repliesError } = await supabaseClient
+      .from("inquiry_replies")
+      .select("*")
+      .eq("inquiry_id", inquiry.id)
+      .order("created_at", { ascending: true });
+
     const statusClass = inquiry.status === "new" ? "unread" : "read";
+
+    let repliesHTML = "";
+
+    if (!repliesError && replies && replies.length > 0) {
+      repliesHTML = replies.map(reply => `
+        <div class="reply-item">
+          <strong>${reply.sender_type || "Vendor"}:</strong>
+          <p>${reply.message || ""}</p>
+          <small>${new Date(reply.created_at).toLocaleString()}</small>
+        </div>
+      `).join("");
+    } else {
+      repliesHTML = "<p>No replies yet.</p>";
+    }
 
     inboxList.innerHTML += `
       <div class="inquiry-card ${statusClass}">
@@ -386,9 +438,20 @@ async function loadInbox() {
         ${inquiry.status === "new"
           ? `<button onclick="markInquiryRead('${inquiry.id}')">Mark as Read</button>`
           : ""}
+
+        <div class="reply-thread">
+          <h4>Conversation</h4>
+          ${repliesHTML}
+
+          <div class="reply-box">
+            <label>Reply</label>
+            <textarea id="reply-${inquiry.id}" placeholder="Write your response..."></textarea>
+            <button onclick="sendReply('${inquiry.id}')">Send Reply</button>
+          </div>
+        </div>
       </div>
     `;
-  });
+  }
 }
 
 async function markInquiryRead(inquiryId) {
@@ -404,6 +467,41 @@ async function markInquiryRead(inquiryId) {
   }
 
   message.textContent = "Inquiry marked as read.";
+  loadInbox();
+}
+
+async function sendReply(inquiryId) {
+  const replyBox = document.getElementById(`reply-${inquiryId}`);
+  const replyMessage = replyBox.value;
+
+  if (!replyMessage.trim()) {
+    message.textContent = "Please type a reply before sending.";
+    return;
+  }
+
+  const { error } = await supabaseClient
+    .from("inquiry_replies")
+    .insert([
+      {
+        inquiry_id: inquiryId,
+        sender_type: "vendor",
+        message: replyMessage
+      }
+    ]);
+
+  if (error) {
+    message.textContent = "Reply could not be sent: " + error.message;
+    return;
+  }
+
+  await supabaseClient
+    .from("vendor_inquiries")
+    .update({ status: "read" })
+    .eq("id", inquiryId)
+    .eq("vendor_id", vendorId);
+
+  message.textContent = "Reply sent.";
+  replyBox.value = "";
   loadInbox();
 }
 
