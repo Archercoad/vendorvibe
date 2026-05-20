@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Messages | VendorVibe</title>
+
+  <link rel="stylesheet" href="app.css">
+</head>
+
+<body>
+
+  <!-- TOP NAVIGATION -->
+
+  <header class="topbar">
+
+    <div class="topbar-left">
+
+      <div class="logo">VendorVibe</div>
+
+      <div class="search-bar">
+        <input type="text" placeholder="Search conversations...">
+      </div>
+
+    </div>
+
+    <nav class="top-nav">
+
+      <a href="#" class="top-nav-item">
+        Dashboard
+      </a>
+
+      <a href="vendors.html" class="top-nav-item">
+        Vendors
+      </a>
+
+      <a href="messages.html" class="top-nav-item">
+        Messages
+        <span class="nav-badge">2</span>
+      </a>
+
+      <a href="#" class="top-nav-item">
+        Notifications
+      </a>
+
+      <a href="#" class="top-nav-item">
+        Profile
+      </a>
+
+      <a href="login.html" class="top-nav-item">
+        Logout
+      </a>
+
+    </nav>
+
+  </header>
+
+  <!-- MAIN APP LAYOUT -->
+
+  <div class="app-layout">
+
+    <!-- LEFT SIDEBAR -->
+
+    <aside class="sidebar">
+
+      <div class="sidebar-header">
+
+        <h2>Messages</h2>
+
+        <div class="sidebar-search">
+          <input type="text" placeholder="Search inbox">
+        </div>
+
+      </div>
+
+      <!-- CONVERSATION LIST -->
+
+      <div class="conversation-list">
+
+        <div class="conversation-item active">
+
+          <div class="conversation-avatar"></div>
+
+          <div class="conversation-content">
+
+            <div class="conversation-top">
+
+              <div class="conversation-name">
+                Sarah Johnson
+              </div>
+
+              <div class="conversation-time">
+                2m
+              </div>
+
+            </div>
+
+            <div class="conversation-preview">
+              Hi! I was wondering if you're available for our wedding next August...
+            </div>
+
+          </div>
+
+          <div class="unread-dot"></div>
+
+        </div>
+
+        <div class="conversation-item">
+
+          <div class="conversation-avatar"></div>
+
+          <div class="conversation-content">
+
+            <div class="conversation-top">
+
+              <div class="conversation-name">
+                Kingston Events Co.
+              </div>
+
+              <div class="conversation-time">
+                1h
+              </div>
+
+            </div>
+
+            <div class="conversation-preview">
+              Thanks for sending over your pricing guide.
+            </div>
+
+          </div>
+
+        </div>
+
+        <div class="conversation-item">
+
+          <div class="conversation-avatar"></div>
+
+          <div class="conversation-content">
+
+            <div class="conversation-top">
+
+              <div class="conversation-name">
+                Emily & Carter
+              </div>
+
+              <div class="conversation-time">
+                Yesterday
+              </div>
+
+            </div>
+
+            <div class="conversation-preview">
+              We'd love to book you for our engagement party.
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </aside>
+
+    <!-- MAIN CONVERSATION PANEL -->
+
+    <main class="main-panel">
+
+      <!-- CONVERSATION HEADER -->
+
+      <div class="main-header">
+
+        <div class="main-header-left">
+
+          <div class="main-avatar"></div>
+
+          <div>
+
+            <div class="main-name">
+              Sarah Johnson
+            </div>
+
+            <div class="main-subtitle">
+              Wedding Inquiry • August 2027
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- MESSAGE THREAD -->
+
+      <div class="message-thread">
+
+        <div class="message-bubble client">
+
+          Hi! I was wondering if you're available for our wedding next August in Kingston.
+
+          <div class="message-time">
+            Today • 9:14 AM
+          </div>
+
+        </div>
+
+        <div class="message-bubble vendor">
+
+          Hi Sarah! Thanks so much for reaching out. Yes, I still have availability in August 2027. I'd love to hear more details about your day.
+
+          <div class="message-time">
+            Today • 9:20 AM
+          </div>
+
+        </div>
+
+        <div class="message-bubble client">
+
+          Amazing! We're planning roughly 120 guests at a waterfront venue.
+
+          <div class="message-time">
+            Today • 9:22 AM
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- MESSAGE COMPOSER -->
+
+      <div class="message-composer">
+
+        <textarea placeholder="Write a message..."></textarea>
+
+        <div class="composer-actions">
+          <button class="send-button">
+            Send Message
+          </button>
+        </div>
+
+      </div>
+
+    </main>
+
+  </div>
+
+</body>
+</html>
