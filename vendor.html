@@ -500,18 +500,23 @@
         return;
       }
 
-      const { error } = await supabaseClient
-        .from("vendor_inquiries")
-        .insert([
-          {
-            vendor_id: currentVendor.id,
-            client_name: document.getElementById("clientName").value,
-            client_email: document.getElementById("clientEmail").value,
-            event_type: document.getElementById("eventType").value,
-            message: document.getElementById("inquiryMessage").value,
-            status: "new"
-          }
-        ]);
+      const {
+  data: { user }
+} = await supabaseClient.auth.getUser();
+
+const { error } = await supabaseClient
+  .from("vendor_inquiries")
+  .insert([
+    {
+      vendor_id: currentVendor.id,
+      client_name: document.getElementById("clientName").value,
+      client_email: document.getElementById("clientEmail").value,
+      event_type: document.getElementById("eventType").value,
+      message: document.getElementById("inquiryMessage").value,
+      status: "new",
+      client_user_id: user ? user.id : null
+    }
+  ]);
 
       if (error) {
         status.textContent = "Inquiry could not be sent: " + error.message;
