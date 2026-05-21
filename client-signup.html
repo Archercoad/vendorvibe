@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Create Client Account | VendorVibe</title>
+
+  <link rel="stylesheet" href="app.css">
+
+  <style>
+    body {
+      background-color: #F3F8FA;
+    }
+
+    .signup-wrapper {
+      max-width: 650px;
+      margin: 60px auto;
+      padding: 40px;
+    }
+
+    .signup-card {
+      background: white;
+      padding: 40px;
+      border-radius: 18px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+    }
+
+    h1 {
+      margin-top: 0;
+      color: #1A0C6A;
+    }
+
+    p {
+      line-height: 1.6;
+    }
+
+    label {
+      display: block;
+      margin-top: 20px;
+      margin-bottom: 8px;
+      font-weight: bold;
+      color: #1A0C6A;
+    }
+
+    input,
+    select {
+      width: 100%;
+      padding: 14px;
+      border-radius: 10px;
+      border: 1px solid #ccdbe2;
+      box-sizing: border-box;
+      font-size: 16px;
+    }
+
+    .primary-button {
+      margin-top: 30px;
+      padding: 15px;
+      background-color: #1A0C6A;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      width: 100%;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .message {
+      margin-top: 20px;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .back-link {
+      margin-top: 25px;
+      text-align: center;
+    }
+
+    .back-link a {
+      color: #1A0C6A;
+      text-decoration: none;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="signup-wrapper">
+
+  <div class="signup-card">
+
+    <h1>Create Your VendorVibe Account</h1>
+
+    <p>
+      Create your VendorVibe client account to discover vendors, save favourites,
+      manage conversations, and build your personalized event vibe profile.
+    </p>
+
+    <label>Full Name</label>
+    <input type="text" id="fullName">
+
+    <label>Email Address</label>
+    <input type="email" id="email">
+
+    <label>Password</label>
+    <input type="password" id="password">
+
+    <label>What type of event are you planning?</label>
+    <select id="eventType">
+      <option value="">Select Event Type</option>
+      <option>Wedding</option>
+      <option>Corporate Event</option>
+      <option>Birthday Party</option>
+      <option>Concert</option>
+      <option>Festival</option>
+      <option>Private Event</option>
+      <option>Community Event</option>
+      <option>Other</option>
+    </select>
+
+    <label>Event City</label>
+    <input type="text" id="eventCity">
+
+    <button class="primary-button" id="signupButton">
+      Continue to Build My Vibe
+    </button>
+
+    <p class="message" id="message"></p>
+
+    <div class="back-link">
+      <a href="login.html">Already have an account? Login</a>
+    </div>
+
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+<script>
+const supabaseClient = window.supabase.createClient(
+  "https://zvoarlanqjlezqzmgwhe.supabase.co",
+  "sb_publishable_8p6mMcu2YImc5doJhMpIaA_oA1yBYu9"
+);
+
+const message = document.getElementById("message");
+
+document.getElementById("signupButton").addEventListener("click", async function() {
+
+  message.textContent = "";
+
+  const fullName = document.getElementById("fullName").value.trim();
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+  const eventType = document.getElementById("eventType").value;
+  const eventCity = document.getElementById("eventCity").value.trim();
+
+  if (!fullName || !email || !password) {
+    message.textContent = "Please complete all required fields.";
+    return;
+  }
+
+  const { data, error } = await supabaseClient.auth.signUp({
+    email,
+    password
+  });
+
+  if (error) {
+    message.textContent = "Signup error: " + error.message;
+    return;
+  }
+
+  const user = data.user;
+
+  if (!user) {
+    message.textContent = "Account created. Please verify your email.";
+    return;
+  }
+
+  const { error: profileError } = await supabaseClient
+    .from("client_profiles")
+    .insert([
+      {
+        user_id: user.id,
+        full_name: fullName,
+        event_type: eventType,
+        event_city: eventCity
+      }
+    ]);
+
+  if (profileError) {
+    message.textContent =
+      "Account created, but profile setup failed: " +
+      profileError.message;
+
+    return;
+  }
+
+  message.textContent =
+    "Account created successfully! Redirecting...";
+
+  setTimeout(() => {
+    window.location.href = "client-dashboard.html";
+  }, 1200);
+
+});
+</script>
+
+</body>
+</html>
