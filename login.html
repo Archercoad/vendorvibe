@@ -12,7 +12,7 @@
     }
 
     .container {
-      max-width: 450px;
+      max-width: 480px;
       margin: 80px auto;
       background: white;
       padding: 35px;
@@ -50,6 +50,27 @@
       text-align: center;
     }
 
+    .signup-links {
+      margin-top: 25px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .signup-link {
+      display: block;
+      padding: 12px;
+      border: 1px solid #1A0C6A;
+      border-radius: 8px;
+      text-align: center;
+      color: #1A0C6A;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .signup-link:hover {
+      background-color: #EBFCFF;
+    }
+
     a {
       color: #1A0C6A;
     }
@@ -72,16 +93,16 @@
 
   <p class="message" id="message"></p>
 
-  <p style="margin-top:25px;">
-    Need an account?
-    <a href="signup.html">Create Vendor Account</a>
-  </p>
+  <div class="signup-links">
+    <a href="client-signup.html" class="signup-link">Create Client Account</a>
+    <a href="signup.html" class="signup-link">Create Vendor Account</a>
+  </div>
 
-  <p>
+  <p style="text-align:center; margin-top:20px;">
     <a href="forgot-password.html">Forgot Password?</a>
   </p>
 
-  <p>
+  <p style="text-align:center;">
     <a href="index.html">Back to Home</a>
   </p>
 
@@ -115,14 +136,13 @@ document.getElementById("loginButton").addEventListener("click", async function(
 
   const user = data.user;
 
-  const { data: profile, error: profileError } = await supabaseClient
+  const { data: profile } = await supabaseClient
     .from("profiles")
     .select("*")
     .eq("user_id", user.id)
-    .single();
+    .maybeSingle();
 
-  if (!profileError && profile && profile.is_admin === true) {
-
+  if (profile && profile.is_admin === true) {
     message.textContent = "Admin login successful!";
 
     setTimeout(() => {
@@ -132,12 +152,39 @@ document.getElementById("loginButton").addEventListener("click", async function(
     return;
   }
 
-  message.textContent = "Login successful!";
+  const { data: vendor } = await supabaseClient
+    .from("vendors")
+    .select("*")
+    .eq("user_id", user.id)
+    .maybeSingle();
 
-  setTimeout(() => {
-    window.location.href = "vendor-dashboard.html";
-  }, 800);
+  if (vendor) {
+    message.textContent = "Vendor login successful!";
 
+    setTimeout(() => {
+      window.location.href = "vendor-dashboard.html";
+    }, 800);
+
+    return;
+  }
+
+  const { data: client } = await supabaseClient
+    .from("client_profiles")
+    .select("*")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (client) {
+    message.textContent = "Client login successful!";
+
+    setTimeout(() => {
+      window.location.href = "client-dashboard.html";
+    }, 800);
+
+    return;
+  }
+
+  message.textContent = "Login successful, but no account profile was found.";
 });
 </script>
 
