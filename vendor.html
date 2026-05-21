@@ -185,6 +185,14 @@
       font-weight: bold;
     }
 
+    .login-note {
+      background: #EBFCFF;
+      border: 1px solid #b9d8de;
+      padding: 12px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+    }
+
     .lightbox {
       display: none;
       position: fixed;
@@ -275,7 +283,7 @@
 
       <div id="vendorLinks"></div>
 
-      <a href="#inquirySection" class="cta-button">Contact This Vendor</a>
+      <a href="#inquirySection" class="cta-button" id="contactButton">Contact This Vendor</a>
     </div>
   </section>
 
@@ -311,14 +319,21 @@
   </section>
 
   <section class="section" id="inquirySection">
-    <h2>Contact This Vendor</h2>
+    <h2 id="contactHeading">Contact This Vendor</h2>
 
     <form class="inquiry-form" id="inquiryForm">
-      <label>Your Name</label>
-      <input type="text" id="clientName" required>
 
-      <label>Your Email</label>
-      <input type="email" id="clientEmail" required>
+      <div class="login-note" id="clientLoginNote">
+        You can send an inquiry as a guest, or log in/create a client account to keep the conversation inside VendorVibe.
+      </div>
+
+      <div id="guestFields">
+        <label>Your Name</label>
+        <input type="text" id="clientName">
+
+        <label>Your Email</label>
+        <input type="email" id="clientEmail">
+      </div>
 
       <label>Event Type</label>
       <select id="eventType">
@@ -330,10 +345,10 @@
         <option>Other</option>
       </select>
 
-      <label>Message</label>
+      <label id="messageLabel">Message</label>
       <textarea id="inquiryMessage" placeholder="Tell the vendor what you’re looking for..." required></textarea>
 
-      <button type="submit">Send Inquiry</button>
+      <button type="submit" id="sendInquiryButton">Send Inquiry</button>
 
       <p class="inquiry-message" id="inquiryStatus"></p>
     </form>
@@ -358,6 +373,8 @@
     let galleryImages = [];
     let currentImageIndex = 0;
     let currentVendor = null;
+    let currentUser = null;
+    let currentClientProfile = null;
 
     function createVendorId(name) {
       return name.toLowerCase().replaceAll(" ", "-");
@@ -421,7 +438,41 @@
       }
     });
 
+    async function checkLoggedInClient() {
+      const {
+        data: { user }
+      } = await supabaseClient.auth.getUser();
+
+      currentUser = user || null;
+
+      if (!currentUser) {
+        return;
+      }
+
+      const { data: clientProfile } = await supabaseClient
+        .from("client_profiles")
+        .select("*")
+        .eq("user_id", currentUser.id)
+        .maybeSingle();
+
+      if (clientProfile) {
+        currentClientProfile = clientProfile;
+
+        document.getElementById("contactHeading").textContent = "Message This Vendor";
+        document.getElementById("contactButton").textContent = "Message This Vendor";
+        document.getElementById("sendInquiryButton").textContent = "Start Conversation";
+        document.getElementById("messageLabel").textContent = "Your Message";
+
+        document.getElementById("guestFields").style.display = "none";
+
+        document.getElementById("clientLoginNote").textContent =
+          `You are logged in as ${clientProfile.full_name || "a VendorVibe client"}. This message will appear in your VendorVibe inbox.`;
+      }
+    }
+
     async function loadVendor() {
+      await checkLoggedInClient();
+
       const id = new URLSearchParams(window.location.search).get("id");
 
       const { data, error } = await supabaseClient
@@ -500,26 +551,45 @@
         return;
       }
 
-      const {
-  data: { user }
-} = await supabaseClient.auth.getUser();
+      let clientName = document.getElementById("clientName").value;
+      let clientEmail = document.getElementById("clientEmail").value;
 
-const { error } = await supabaseClient
-  .from("vendor_inquiries")
-  .insert([
-    {
-      vendor_id: currentVendor.id,
-      client_name: document.getElementById("clientName").value,
-      client_email: document.getElementById("clientEmail").value,
-      event_type: document.getElementById("eventType").value,
-      message: document.getElementById("inquiryMessage").value,
-      status: "new",
-      client_user_id: user ? user.id : null
-    }
-  ]);
+      if (currentClientProfile && currentUser) {
+        clientName = currentClientProfile.full_name || "VendorVibe Client";
+        clientEmail = currentUser.email || "";
+      } else {
+        if (!clientName || !clientEmail) {
+          status.textContent = "Please enter your name and email.";
+          return;
+        }
+      }
+
+      const { error } = await supabaseClient
+        .from("vendor_inquiries")
+        .insert([
+          {
+            vendor_id: currentVendor.id,
+            client_name: clientName,
+            client_email: clientEmail,
+            event_type: document.getElementById("eventType").value,
+            message: document.getElementById("inquiryMessage").value,
+            status: "new",
+            client_user_id: currentUser ? currentUser.id : null
+          }
+        ]);
 
       if (error) {
-        status.textContent = "Inquiry could not be sent: " + error.message;
+        status.textContent = "Message could not be sent: " + error.message;
+        return;
+      }
+
+      if (currentClientProfile) {
+        status.textContent = "Message sent! Opening your messages...";
+
+        setTimeout(() => {
+          window.location.href = "client-messages.html";
+        }, 1000);
+
         return;
       }
 
