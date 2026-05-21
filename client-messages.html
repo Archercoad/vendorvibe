@@ -110,7 +110,7 @@ async function initClientMessages() {
 async function loadClientInquiries() {
   const { data, error } = await supabaseClient
     .from("vendor_inquiries")
-    .select("*, vendors(name, category, city)")
+    .select("*, vendors(name, category, city, image)")
     .eq("client_user_id", currentUserId)
     .eq("client_deleted", false)
     .order("created_at", { ascending: false });
@@ -141,7 +141,13 @@ function renderConversationList(list) {
     conversationList.innerHTML += `
       <div class="conversation-item ${isActive ? "active" : ""}" onclick="openConversation('${inquiry.id}')">
         <div style="display:flex; gap:14px; width:100%;">
-          <div class="conversation-avatar"></div>
+          <div class="conversation-avatar">
+  ${
+    inquiry.vendors?.image
+      ? `<img class="avatar-image" src="${inquiry.vendors.image}">`
+      : ""
+  }
+</div>
 
           <div class="conversation-content">
             <div class="conversation-top">
@@ -182,6 +188,10 @@ async function openConversation(inquiryId) {
   const vendorName = activeInquiry.vendors?.name || "Vendor";
 
   activeName.textContent = vendorName;
+  document.querySelector(".main-avatar").innerHTML =
+  activeInquiry.vendors?.image
+    ? `<img class="avatar-image" src="${activeInquiry.vendors.image}">`
+    : "";
 
   activeSubtitle.textContent =
     `${activeInquiry.vendors?.category || "Vendor"} • ${activeInquiry.vendors?.city || ""}`;
