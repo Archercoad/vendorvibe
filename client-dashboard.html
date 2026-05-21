@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Client Dashboard | VendorVibe</title>
+  <link rel="stylesheet" href="app.css">
+
+  <style>
+    .dashboard-page {
+      padding: 30px;
+      overflow-y: auto;
+      width: 100%;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-top: 24px;
+    }
+
+    .full-width {
+      grid-column: 1 / -1;
+    }
+
+    .dashboard-stat {
+      font-size: 28px;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    .primary-button {
+      margin-top: 18px;
+      padding: 13px;
+      background-color: #1A0C6A;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      width: 100%;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .message {
+      margin-top: 20px;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    @media (max-width: 850px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header class="topbar">
+  <div class="topbar-left">
+    <div class="logo">VendorVibe</div>
+
+    <div class="search-bar">
+      <input type="text" placeholder="Search VendorVibe...">
+    </div>
+  </div>
+
+  <nav class="top-nav">
+    <a href="client-dashboard.html" class="top-nav-item">Dashboard</a>
+    <a href="vendors.html" class="top-nav-item">Find Vendors</a>
+    <a href="client-messages.html" class="top-nav-item">
+      Messages
+      <span class="nav-badge" id="messageBadge" style="display:none;">0</span>
+    </a>
+    <a href="#" class="top-nav-item">Saved Vendors</a>
+    <a href="#" class="top-nav-item">Notifications</a>
+    <a href="login.html" class="top-nav-item" id="logoutLink">Logout</a>
+  </nav>
+</header>
+
+<div class="dashboard-page">
+
+  <h1>Client Dashboard</h1>
+  <p>Plan your event, track vendor conversations, and manage your favourite vendors.</p>
+
+  <p class="message" id="message"></p>
+
+  <div class="dashboard-grid">
+
+    <div class="app-card">
+      <h2>Messages</h2>
+      <p>You have:</p>
+      <div class="dashboard-stat" id="messageCount">0</div>
+      <p>active vendor conversation(s)</p>
+
+      <a href="client-messages.html">
+        <button class="primary-button">Open Messages</button>
+      </a>
+    </div>
+
+    <div class="app-card">
+      <h2>Saved Vendors</h2>
+      <p>Build a shortlist of vendors you are interested in.</p>
+      <div class="dashboard-stat">0</div>
+      <p>saved vendor(s)</p>
+
+      <a href="vendors.html">
+        <button class="primary-button">Find Vendors</button>
+      </a>
+    </div>
+
+    <div class="app-card full-width">
+      <h2>Event Planning Workspace</h2>
+      <p>This area will eventually help clients organize vendors by event, track inquiries, compare pricing, and manage bookings.</p>
+    </div>
+
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+<script>
+const supabaseClient = window.supabase.createClient(
+  "https://zvoarlanqjlezqzmgwhe.supabase.co",
+  "sb_publishable_8p6mMcu2YImc5doJhMpIaA_oA1yBYu9"
+);
+
+async function loadClientDashboard() {
+  const {
+    data: { user },
+    error
+  } = await supabaseClient.auth.getUser();
+
+  if (error || !user) {
+    window.location.href = "login.html";
+    return;
+  }
+
+  const { data: inquiries, error: inquiryError } = await supabaseClient
+    .from("vendor_inquiries")
+    .select("*")
+    .eq("client_user_id", user.id)
+    .eq("client_deleted", false);
+
+  if (!inquiryError && inquiries) {
+    document.getElementById("messageCount").textContent = inquiries.length;
+
+    const badge = document.getElementById("messageBadge");
+
+    if (inquiries.length > 0) {
+      badge.style.display = "inline-block";
+      badge.textContent = inquiries.length;
+    }
+  }
+}
+
+document.getElementById("logoutLink").addEventListener("click", async function(event) {
+  event.preventDefault();
+  await supabaseClient.auth.signOut();
+  window.location.href = "login.html";
+});
+
+loadClientDashboard();
+</script>
+
+</body>
+</html>
