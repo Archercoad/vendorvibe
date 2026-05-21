@@ -40,6 +40,16 @@
       cursor: pointer;
     }
 
+    .profile-image-preview {
+      margin-top: 20px;
+      width: 160px;
+      height: 160px;
+      object-fit: cover;
+      border-radius: 50%;
+      display: block;
+      background-color: #EBFCFF;
+    }
+
     .message {
       margin-top: 20px;
       font-weight: bold;
@@ -88,6 +98,16 @@
   <div class="dashboard-grid">
 
     <div class="app-card">
+      <h2>Profile Photo</h2>
+      <p>Upload a photo so vendors can recognize your profile in messages.</p>
+
+      <input type="file" id="profileImageFile" accept="image/*">
+      <button class="primary-button" id="uploadProfileImageButton">Upload Profile Photo</button>
+
+      <img id="profileImagePreview" class="profile-image-preview" src="">
+    </div>
+
+    <div class="app-card">
       <h2>Messages</h2>
       <p>You have:</p>
       <div class="dashboard-stat" id="messageCount">0</div>
@@ -126,6 +146,11 @@ const supabaseClient = window.supabase.createClient(
   "sb_publishable_8p6mMcu2YImc5doJhMpIaA_oA1yBYu9"
 );
 
+let currentUserId = null;
+let clientProfileId = null;
+
+const message = document.getElementById("message");
+
 async function loadClientDashboard() {
   const {
     data: { user },
@@ -135,6 +160,25 @@ async function loadClientDashboard() {
   if (error || !user) {
     window.location.href = "login.html";
     return;
+  }
+
+  currentUserId = user.id;
+
+  const { data: profile, error: profileError } = await supabaseClient
+    .from("client_profiles")
+    .select("*")
+    .eq("user_id", user.id)
+    .single();
+
+  if (profileError || !profile) {
+    message.textContent = "Client profile not found.";
+    return;
+  }
+
+  clientProfileId = profile.id;
+
+  if (profile.profile_image) {
+    document.getElementById("profileImagePreview").src = profile.profile_image;
   }
 
   const { data: inquiries, error: inquiryError } = await supabaseClient
@@ -154,6 +198,61 @@ async function loadClientDashboard() {
     }
   }
 }
+
+document.getElementById("uploadProfileImageButton").addEventListener("click", async function() {
+  const fileInput = document.getElementById("profileImageFile");
+  const file = fileInput.files[0];
+
+  message.textContent = "";
+
+  if (!currentUserId || !clientProfileId) {
+    message.textContent = "Client profile not loaded yet.";
+    return;
+  }
+
+  if (!file) {
+    message.textContent = "Please choose a profile photo.";
+    return;
+  }
+
+  message.textContent = "Uploading profile photo...";
+
+  const fileExt = file.name.split(".").pop();
+  const fileName = `${currentUserId}-${Date.now()}.${fileExt}`;
+  const filePath = `${currentUserId}/${fileName}`;
+
+  const { error: uploadError } = await supabaseClient
+    .storage
+    .from("client-profile-images")
+    .upload(filePath, file);
+
+  if (uploadError) {
+    message.textContent = "Profile photo upload failed: " + uploadError.message;
+    return;
+  }
+
+  const { data: publicUrlData } = supabaseClient
+    .storage
+    .from("client-profile-images")
+    .getPublicUrl(filePath);
+
+  const publicUrl = publicUrlData.publicUrl;
+
+  const { error: updateError } = await supabaseClient
+    .from("client_profiles")
+    .update({ profile_image: publicUrl })
+    .eq("id", clientProfileId)
+    .eq("user_id", currentUserId);
+
+  if (updateError) {
+    message.textContent = "Photo uploaded, but profile update failed: " + updateError.message;
+    return;
+  }
+
+  document.getElementById("profileImagePreview").src = publicUrl;
+  fileInput.value = "";
+  message.textContent = "Profile photo updated successfully!";
+});
 
 document.getElementById("logoutLink").addEventListener("click", async function(event) {
   event.preventDefault();
