@@ -87,6 +87,7 @@ let currentUserId = null;
 let vendorId = null;
 let inquiries = [];
 let activeInquiry = null;
+let clientProfiles = {};
 
 const conversationList = document.getElementById("conversationList");
 const messageThread = document.getElementById("messageThread");
@@ -138,6 +139,24 @@ async function loadInquiries() {
   }
 
   inquiries = data || [];
+  const clientUserIds = inquiries
+  .map(inquiry => inquiry.client_user_id)
+  .filter(Boolean);
+
+if (clientUserIds.length > 0) {
+  const { data: profiles } = await supabaseClient
+    .from("client_profiles")
+    .select("user_id, full_name, profile_image")
+    .in("user_id", clientUserIds);
+
+  clientProfiles = {};
+
+  if (profiles) {
+    profiles.forEach(profile => {
+      clientProfiles[profile.user_id] = profile;
+    });
+  }
+}
   renderConversationList(inquiries);
   updateUnreadBadge();
 }
@@ -158,7 +177,13 @@ function renderConversationList(list) {
     conversationList.innerHTML += `
       <div class="conversation-item ${isActive ? "active" : ""}" onclick="openConversation('${inquiry.id}')">
         <div style="display:flex; gap:14px; width:100%;">
-          <div class="conversation-avatar"></div>
+          <div class="conversation-avatar">
+  ${
+    clientProfiles[inquiry.client_user_id]?.profile_image
+      ? `<img class="avatar-image" src="${clientProfiles[inquiry.client_user_id].profile_image}">`
+      : ""
+  }
+</div>
 
           <div class="conversation-content">
             <div class="conversation-top">
@@ -199,6 +224,12 @@ async function openConversation(inquiryId) {
   if (!activeInquiry) return;
 
   activeName.textContent = activeInquiry.client_name || "Unknown Client";
+  const clientProfile = clientProfiles[activeInquiry.client_user_id];
+
+document.querySelector(".main-avatar").innerHTML =
+  clientProfile?.profile_image
+    ? `<img class="avatar-image" src="${clientProfile.profile_image}">`
+    : "";
   activeSubtitle.textContent =
     `${activeInquiry.event_type || "Inquiry"} • ${activeInquiry.client_email || ""}`;
 
