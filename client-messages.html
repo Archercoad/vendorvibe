@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Client Messages | VendorVibe</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+
+<body>
+
+<header class="topbar">
+  <div class="topbar-left">
+    <div class="logo">VendorVibe</div>
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="Search conversations...">
+    </div>
+  </div>
+
+  <nav class="top-nav">
+    <a href="client-dashboard.html" class="top-nav-item">Dashboard</a>
+    <a href="vendors.html" class="top-nav-item">Find Vendors</a>
+    <a href="client-messages.html" class="top-nav-item">Messages</a>
+    <a href="#" class="top-nav-item">Saved Vendors</a>
+    <a href="#" class="top-nav-item">Notifications</a>
+    <a href="login.html" class="top-nav-item" id="logoutLink">Logout</a>
+  </nav>
+</header>
+
+<div class="app-layout">
+
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h2>Messages</h2>
+      <div class="sidebar-search">
+        <input type="text" id="sidebarSearch" placeholder="Search inbox">
+      </div>
+    </div>
+
+    <div class="conversation-list" id="conversationList">
+      <p style="padding:20px;">Loading conversations...</p>
+    </div>
+  </aside>
+
+  <main class="main-panel">
+
+    <div class="main-header">
+      <div class="main-header-left">
+        <div class="main-avatar"></div>
+        <div>
+          <div class="main-name" id="activeName">Select a conversation</div>
+          <div class="main-subtitle" id="activeSubtitle">Your messages will appear here.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="message-thread" id="messageThread">
+      <div class="app-card">
+        Select a message from the left to view the conversation.
+      </div>
+    </div>
+
+    <div class="message-composer">
+      <textarea id="replyBox" placeholder="Write a message..." disabled></textarea>
+
+      <div class="composer-actions">
+        <button class="send-button" id="sendButton" disabled>
+          Send Message
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+<script>
+const supabaseClient = window.supabase.createClient(
+  "https://zvoarlanqjlezqzmgwhe.supabase.co",
+  "sb_publishable_8p6mMcu2YImc5doJhMpIaA_oA1yBYu9"
+);
+
+let currentUserId = null;
+let inquiries = [];
+let activeInquiry = null;
+
+const conversationList = document.getElementById("conversationList");
+const messageThread = document.getElementById("messageThread");
+const activeName = document.getElementById("activeName");
+const activeSubtitle = document.getElementById("activeSubtitle");
+const replyBox = document.getElementById("replyBox");
+const sendButton = document.getElementById("sendButton");
+
+async function initClientMessages() {
+  const {
+    data: { user },
+    error: userError
+  } = await supabaseClient.auth.getUser();
+
+  if (userError || !user) {
+    window.location.href = "login.html";
+    return;
+  }
+
+  currentUserId = user.id;
+
+  await loadClientInquiries();
+}
+
+async function loadClientInquiries() {
+  const { data, error } = await supabaseClient
+    .from("vendor_inquiries")
+    .select("*, vendors(name, category, city)")
+    .eq("client_user_id", currentUserId)
+    .eq("client_deleted", false)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    conversationList.innerHTML = "<p style='padding:20px;'>Could not load messages: " + error.message + "</p>";
+    return;
+  }
+
+  inquiries = data || [];
+
+  renderConversationList(inquiries);
+}
+
+function renderConversationList(list) {
+  conversationList.innerHTML = "";
+
+  if (!list.length) {
+    conversationList.innerHTML = "<p style='padding:20px;'>No client messages yet.</p>";
+    return;
+  }
+
+  list.forEach(inquiry => {
+    const isActive = activeInquiry && activeInquiry.id === inquiry.id;
+    const vendorName = inquiry.vendors?.name || "Vendor";
+    const time = formatTime(inquiry.created_at);
+
+    conversationList.innerHTML += `
+      <div class="conversation-item ${isActive ? "active" : ""}" onclick="openConversation('${inquiry.id}')">
+        <div style="display:flex; gap:14px; width:100%;">
+          <div class="conversation-avatar"></div>
+
+          <div class="conversation-content">
+            <div class="conversation-top">
+              <div class="conversation-name">${vendorName}</div>
+              <div class="conversation-time">${time}</div>
+            </div>
+
+            <div class="conversation-preview">
+              ${inquiry.message || ""}
+            </div>
+
+            <button
+              onclick="deleteConversation(event, '${inquiry.id}')"
+              style="
+                margin-top:10px;
+                background:#b00020;
+                color:white;
+                border:none;
+                border-radius:8px;
+                padding:6px 10px;
+                cursor:pointer;
+                font-size:12px;
+              ">
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+}
+
+async function openConversation(inquiryId) {
+  activeInquiry = inquiries.find(i => i.id === inquiryId);
+
+  if (!activeInquiry) return;
+
+  const vendorName = activeInquiry.vendors?.name || "Vendor";
+
+  activeName.textContent = vendorName;
+
+  activeSubtitle.textContent =
+    `${activeInquiry.vendors?.category || "Vendor"} • ${activeInquiry.vendors?.city || ""}`;
+
+  replyBox.disabled = false;
+  sendButton.disabled = false;
+
+  await loadConversationThread(activeInquiry);
+
+  renderConversationList(inquiries);
+}
+
+async function loadConversationThread(inquiry) {
+  messageThread.innerHTML = "";
+
+  messageThread.innerHTML += `
+    <div class="message-bubble client">
+      ${inquiry.message || ""}
+      <div class="message-time">
+        You • ${new Date(inquiry.created_at).toLocaleString()}
+      </div>
+    </div>
+  `;
+
+  const { data: replies, error } = await supabaseClient
+    .from("inquiry_replies")
+    .select("*")
+    .eq("inquiry_id", inquiry.id)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    messageThread.innerHTML += `
+      <div class="app-card">
+        Could not load replies: ${error.message}
+      </div>
+    `;
+    return;
+  }
+
+  replies.forEach(reply => {
+    const bubbleClass = reply.sender_type === "client" ? "client" : "vendor";
+    const senderLabel = reply.sender_type === "client" ? "You" : "Vendor";
+
+    messageThread.innerHTML += `
+      <div class="message-bubble ${bubbleClass}">
+        ${reply.message || ""}
+        <div class="message-time">
+          ${senderLabel} • ${new Date(reply.created_at).toLocaleString()}
+        </div>
+      </div>
+    `;
+  });
+
+  messageThread.scrollTop = messageThread.scrollHeight;
+}
+
+sendButton.addEventListener("click", async function() {
+  if (!activeInquiry) return;
+
+  const text = replyBox.value.trim();
+
+  if (!text) return;
+
+  const { error } = await supabaseClient
+    .from("inquiry_replies")
+    .insert([
+      {
+        inquiry_id: activeInquiry.id,
+        sender_type: "client",
+        message: text
+      }
+    ]);
+
+  if (error) {
+    alert("Reply could not be sent: " + error.message);
+    return;
+  }
+
+  replyBox.value = "";
+  await loadConversationThread(activeInquiry);
+});
+
+async function deleteConversation(event, inquiryId) {
+  event.stopPropagation();
+
+  const confirmed = confirm("Delete this conversation from your inbox?");
+  if (!confirmed) return;
+
+  const { error } = await supabaseClient
+    .from("vendor_inquiries")
+    .update({ client_deleted: true })
+    .eq("id", inquiryId)
+    .eq("client_user_id", currentUserId);
+
+  if (error) {
+    alert("Could not delete conversation: " + error.message);
+    return;
+  }
+
+  if (activeInquiry && activeInquiry.id === inquiryId) {
+    activeInquiry = null;
+    activeName.textContent = "Select a conversation";
+    activeSubtitle.textContent = "Your messages will appear here.";
+
+    messageThread.innerHTML = `
+      <div class="app-card">
+        Select a message from the left to view the conversation.
+      </div>
+    `;
+
+    replyBox.disabled = true;
+    sendButton.disabled = true;
+    replyBox.value = "";
+  }
+
+  await loadClientInquiries();
+}
+
+document.getElementById("sidebarSearch").addEventListener("input", function() {
+  filterConversations(this.value);
+});
+
+document.getElementById("searchInput").addEventListener("input", function() {
+  filterConversations(this.value);
+});
+
+function filterConversations(searchValue) {
+  const search = searchValue.toLowerCase();
+
+  const filtered = inquiries.filter(inquiry =>
+    (inquiry.vendors?.name || "").toLowerCase().includes(search) ||
+    (inquiry.message || "").toLowerCase().includes(search) ||
+    (inquiry.event_type || "").toLowerCase().includes(search)
+  );
+
+  renderConversationList(filtered);
+}
+
+document.getElementById("logoutLink").addEventListener("click", async function(event) {
+  event.preventDefault();
+  await supabaseClient.auth.signOut();
+  window.location.href = "login.html";
+});
+
+function formatTime(dateString) {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMinutes = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMinutes / 60);
+
+  if (diffMinutes < 1) return "now";
+  if (diffMinutes < 60) return diffMinutes + "m";
+  if (diffHours < 24) return diffHours + "h";
+
+  return date.toLocaleDateString();
+}
+
+initClientMessages();
+</script>
+
+</body>
+</html>
