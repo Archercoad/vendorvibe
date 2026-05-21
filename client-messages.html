@@ -83,6 +83,7 @@ const supabaseClient = window.supabase.createClient(
 let currentUserId = null;
 let inquiries = [];
 let activeInquiry = null;
+let vendorProfiles = {};
 
 const conversationList = document.getElementById("conversationList");
 const messageThread = document.getElementById("messageThread");
@@ -110,7 +111,7 @@ async function initClientMessages() {
 async function loadClientInquiries() {
   const { data, error } = await supabaseClient
     .from("vendor_inquiries")
-    .select("*, vendors(name, category, city, image)")
+    .select("*")
     .eq("client_user_id", currentUserId)
     .eq("client_deleted", false)
     .order("created_at", { ascending: false });
@@ -121,6 +122,23 @@ async function loadClientInquiries() {
   }
 
   inquiries = data || [];
+
+  const vendorIds = [...new Set(inquiries.map(inquiry => inquiry.vendor_id).filter(Boolean))];
+
+  vendorProfiles = {};
+
+  if (vendorIds.length > 0) {
+    const { data: vendors, error: vendorsError } = await supabaseClient
+      .from("vendors")
+      .select("id, name, category, city, image")
+      .in("id", vendorIds);
+
+    if (!vendorsError && vendors) {
+      vendors.forEach(vendor => {
+        vendorProfiles[vendor.id] = vendor;
+      });
+    }
+  }
 
   renderConversationList(inquiries);
 }
@@ -135,19 +153,17 @@ function renderConversationList(list) {
 
   list.forEach(inquiry => {
     const isActive = activeInquiry && activeInquiry.id === inquiry.id;
-    const vendorName = inquiry.vendors?.name || "Vendor";
+    const vendor = vendorProfiles[inquiry.vendor_id];
+    const vendorName = vendor?.name || "Vendor";
+    const vendorImage = vendor?.image || "";
     const time = formatTime(inquiry.created_at);
 
     conversationList.innerHTML += `
       <div class="conversation-item ${isActive ? "active" : ""}" onclick="openConversation('${inquiry.id}')">
         <div style="display:flex; gap:14px; width:100%;">
           <div class="conversation-avatar">
-  ${
-    inquiry.vendors?.image
-      ? `<img class="avatar-image" src="${inquiry.vendors.image}">`
-      : ""
-  }
-</div>
+            ${vendorImage ? `<img class="avatar-image" src="${vendorImage}">` : ""}
+          </div>
 
           <div class="conversation-content">
             <div class="conversation-top">
@@ -185,16 +201,18 @@ async function openConversation(inquiryId) {
 
   if (!activeInquiry) return;
 
-  const vendorName = activeInquiry.vendors?.name || "Vendor";
+  const vendor = vendorProfiles[activeInquiry.vendor_id];
+  const vendorName = vendor?.name || "Vendor";
 
   activeName.textContent = vendorName;
-  document.querySelector(".main-avatar").innerHTML =
-  activeInquiry.vendors?.image
-    ? `<img class="avatar-image" src="${activeInquiry.vendors.image}">`
-    : "";
 
   activeSubtitle.textContent =
-    `${activeInquiry.vendors?.category || "Vendor"} • ${activeInquiry.vendors?.city || ""}`;
+    `${vendor?.category || "Vendor"} • ${vendor?.city || ""}`;
+
+  document.querySelector(".main-avatar").innerHTML =
+    vendor?.image
+      ? `<img class="avatar-image" src="${vendor.image}">`
+      : "";
 
   replyBox.disabled = false;
   sendButton.disabled = false;
@@ -296,6 +314,8 @@ async function deleteConversation(event, inquiryId) {
     activeName.textContent = "Select a conversation";
     activeSubtitle.textContent = "Your messages will appear here.";
 
+    document.querySelector(".main-avatar").innerHTML = "";
+
     messageThread.innerHTML = `
       <div class="app-card">
         Select a message from the left to view the conversation.
@@ -321,11 +341,17 @@ document.getElementById("searchInput").addEventListener("input", function() {
 function filterConversations(searchValue) {
   const search = searchValue.toLowerCase();
 
-  const filtered = inquiries.filter(inquiry =>
-    (inquiry.vendors?.name || "").toLowerCase().includes(search) ||
-    (inquiry.message || "").toLowerCase().includes(search) ||
-    (inquiry.event_type || "").toLowerCase().includes(search)
-  );
+  const filtered = inquiries.filter(inquiry => {
+    const vendor = vendorProfiles[inquiry.vendor_id];
+
+    return (
+      (vendor?.name || "").toLowerCase().includes(search) ||
+      (vendor?.category || "").toLowerCase().includes(search) ||
+      (vendor?.city || "").toLowerCase().includes(search) ||
+      (inquiry.message || "").toLowerCase().includes(search) ||
+      (inquiry.event_type || "").toLowerCase().includes(search)
+    );
+  });
 
   renderConversationList(filtered);
 }
