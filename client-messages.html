@@ -276,12 +276,13 @@ sendButton.addEventListener("click", async function() {
   const { error } = await supabaseClient
     .from("inquiry_replies")
     .insert([
-      {
-        inquiry_id: activeInquiry.id,
-        sender_type: "client",
-        message: text
-      }
-    ]);
+  {
+    inquiry_id: activeInquiry.id,
+    sender_type: "client",
+    message: text,
+    read_by_vendor: false
+  }
+]);
 
   if (error) {
     alert("Reply could not be sent: " + error.message);
