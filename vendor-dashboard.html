@@ -343,16 +343,37 @@ async function loadVendorProfile() {
 }
 
 async function loadUnreadCount() {
-  const { data, error } = await supabaseClient
+  const { data: newInquiries } = await supabaseClient
     .from("vendor_inquiries")
     .select("*")
     .eq("vendor_id", vendorId)
     .eq("vendor_deleted", false)
     .eq("status", "new");
 
-  if (error) return;
+  const { data: clientReplies } = await supabaseClient
+    .from("inquiry_replies")
+    .select("*")
+    .eq("sender_type", "client")
+    .eq("read_by_vendor", false);
 
-  const count = data ? data.length : 0;
+  let unreadReplyCount = 0;
+
+  if (clientReplies && clientReplies.length > 0) {
+    const inquiryIds = clientReplies.map(reply => reply.inquiry_id);
+
+    const { data: matchingInquiries } = await supabaseClient
+      .from("vendor_inquiries")
+      .select("id")
+      .in("id", inquiryIds)
+      .eq("vendor_id", vendorId)
+      .eq("vendor_deleted", false);
+
+    unreadReplyCount = matchingInquiries ? matchingInquiries.length : 0;
+  }
+
+  const count =
+    (newInquiries ? newInquiries.length : 0) +
+    unreadReplyCount;
 
   document.getElementById("unreadCount").textContent = count;
 
