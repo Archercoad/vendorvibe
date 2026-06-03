@@ -84,6 +84,7 @@ let currentUserId = null;
 let inquiries = [];
 let activeInquiry = null;
 let vendorProfiles = {};
+let repliesByInquiry = {};
 
 const conversationList = document.getElementById("conversationList");
 const messageThread = document.getElementById("messageThread");
@@ -123,24 +124,94 @@ async function loadClientInquiries() {
 
   inquiries = data || [];
 
+  await loadVendorProfiles();
+  await loadRepliesForInquiries();
+
+  sortInquiriesByLatestMessage();
+  renderConversationList(inquiries);
+}
+
+async function loadVendorProfiles() {
   const vendorIds = [...new Set(inquiries.map(inquiry => inquiry.vendor_id).filter(Boolean))];
 
   vendorProfiles = {};
 
-  if (vendorIds.length > 0) {
-    const { data: vendors, error: vendorsError } = await supabaseClient
-      .from("vendors")
-      .select("id, name, category, city, image")
-      .in("id", vendorIds);
+  if (vendorIds.length === 0) return;
 
-    if (!vendorsError && vendors) {
-      vendors.forEach(vendor => {
-        vendorProfiles[vendor.id] = vendor;
-      });
-    }
+  const { data: vendors, error: vendorsError } = await supabaseClient
+    .from("vendors")
+    .select("id, name, category, city, image")
+    .in("id", vendorIds);
+
+  if (!vendorsError && vendors) {
+    vendors.forEach(vendor => {
+      vendorProfiles[vendor.id] = vendor;
+    });
+  }
+}
+
+async function loadRepliesForInquiries() {
+  repliesByInquiry = {};
+
+  const inquiryIds = inquiries.map(inquiry => inquiry.id);
+
+  if (inquiryIds.length === 0) return;
+
+  const { data: replies } = await supabaseClient
+    .from("inquiry_replies")
+    .select("*")
+    .in("inquiry_id", inquiryIds)
+    .order("created_at", { ascending: true });
+
+  if (replies) {
+    replies.forEach(reply => {
+      if (!repliesByInquiry[reply.inquiry_id]) {
+        repliesByInquiry[reply.inquiry_id] = [];
+      }
+
+      repliesByInquiry[reply.inquiry_id].push(reply);
+    });
+  }
+}
+
+function getLatestMessage(inquiry) {
+  const replies = repliesByInquiry[inquiry.id] || [];
+
+  if (replies.length > 0) {
+    const latestReply = replies[replies.length - 1];
+
+    return {
+      text: latestReply.message || "",
+      created_at: latestReply.created_at,
+      sender_type: latestReply.sender_type,
+      read_by_client: latestReply.read_by_client
+    };
   }
 
-  renderConversationList(inquiries);
+  return {
+    text: inquiry.message || "",
+    created_at: inquiry.created_at,
+    sender_type: "client",
+    read_by_client: true
+  };
+}
+
+function sortInquiriesByLatestMessage() {
+  inquiries.sort((a, b) => {
+    const latestA = new Date(getLatestMessage(a).created_at);
+    const latestB = new Date(getLatestMessage(b).created_at);
+
+    return latestB - latestA;
+  });
+}
+
+function hasUnreadForClient(inquiry) {
+  const replies = repliesByInquiry[inquiry.id] || [];
+
+  return replies.some(reply =>
+    reply.sender_type === "vendor" &&
+    reply.read_by_client === false
+  );
 }
 
 function renderConversationList(list) {
@@ -156,7 +227,9 @@ function renderConversationList(list) {
     const vendor = vendorProfiles[inquiry.vendor_id];
     const vendorName = vendor?.name || "Vendor";
     const vendorImage = vendor?.image || "";
-    const time = formatTime(inquiry.created_at);
+    const latest = getLatestMessage(inquiry);
+    const isUnread = hasUnreadForClient(inquiry);
+    const time = formatTime(latest.created_at);
 
     conversationList.innerHTML += `
       <div class="conversation-item ${isActive ? "active" : ""}" onclick="openConversation('${inquiry.id}')">
@@ -167,12 +240,14 @@ function renderConversationList(list) {
 
           <div class="conversation-content">
             <div class="conversation-top">
-              <div class="conversation-name">${vendorName}</div>
+              <div class="conversation-name">
+                ${isUnread ? "● " : ""}${vendorName}
+              </div>
               <div class="conversation-time">${time}</div>
             </div>
 
             <div class="conversation-preview">
-              ${inquiry.message || ""}
+              ${latest.sender_type === "client" ? "You: " : ""}${latest.text || ""}
             </div>
 
             <button
@@ -190,6 +265,8 @@ function renderConversationList(list) {
               Delete
             </button>
           </div>
+
+          ${isUnread ? '<div class="unread-dot"></div>' : ''}
         </div>
       </div>
     `;
@@ -217,9 +294,24 @@ async function openConversation(inquiryId) {
   replyBox.disabled = false;
   sendButton.disabled = false;
 
-  await loadConversationThread(activeInquiry);
+  await markVendorRepliesRead(activeInquiry.id);
+  await loadClientInquiries();
 
-  renderConversationList(inquiries);
+  activeInquiry = inquiries.find(i => i.id === inquiryId);
+
+  if (activeInquiry) {
+    await loadConversationThread(activeInquiry);
+    renderConversationList(inquiries);
+  }
+}
+
+async function markVendorRepliesRead(inquiryId) {
+  await supabaseClient
+    .from("inquiry_replies")
+    .update({ read_by_client: true })
+    .eq("inquiry_id", inquiryId)
+    .eq("sender_type", "vendor")
+    .eq("read_by_client", false);
 }
 
 async function loadConversationThread(inquiry) {
@@ -234,20 +326,7 @@ async function loadConversationThread(inquiry) {
     </div>
   `;
 
-  const { data: replies, error } = await supabaseClient
-    .from("inquiry_replies")
-    .select("*")
-    .eq("inquiry_id", inquiry.id)
-    .order("created_at", { ascending: true });
-
-  if (error) {
-    messageThread.innerHTML += `
-      <div class="app-card">
-        Could not load replies: ${error.message}
-      </div>
-    `;
-    return;
-  }
+  const replies = repliesByInquiry[inquiry.id] || [];
 
   replies.forEach(reply => {
     const bubbleClass = reply.sender_type === "client" ? "client" : "vendor";
@@ -276,13 +355,14 @@ sendButton.addEventListener("click", async function() {
   const { error } = await supabaseClient
     .from("inquiry_replies")
     .insert([
-  {
-    inquiry_id: activeInquiry.id,
-    sender_type: "client",
-    message: text,
-    read_by_vendor: false
-  }
-]);
+      {
+        inquiry_id: activeInquiry.id,
+        sender_type: "client",
+        message: text,
+        read_by_vendor: false,
+        read_by_client: true
+      }
+    ]);
 
   if (error) {
     alert("Reply could not be sent: " + error.message);
@@ -290,7 +370,15 @@ sendButton.addEventListener("click", async function() {
   }
 
   replyBox.value = "";
-  await loadConversationThread(activeInquiry);
+
+  await loadClientInquiries();
+
+  activeInquiry = inquiries.find(i => i.id === activeInquiry.id);
+
+  if (activeInquiry) {
+    await loadConversationThread(activeInquiry);
+    renderConversationList(inquiries);
+  }
 });
 
 async function deleteConversation(event, inquiryId) {
@@ -344,12 +432,13 @@ function filterConversations(searchValue) {
 
   const filtered = inquiries.filter(inquiry => {
     const vendor = vendorProfiles[inquiry.vendor_id];
+    const latest = getLatestMessage(inquiry);
 
     return (
       (vendor?.name || "").toLowerCase().includes(search) ||
       (vendor?.category || "").toLowerCase().includes(search) ||
       (vendor?.city || "").toLowerCase().includes(search) ||
-      (inquiry.message || "").toLowerCase().includes(search) ||
+      (latest.text || "").toLowerCase().includes(search) ||
       (inquiry.event_type || "").toLowerCase().includes(search)
     );
   });
