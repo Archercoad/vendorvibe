@@ -171,9 +171,20 @@ async function loadClientDashboard() {
     .single();
 
   if (profileError || !profile) {
-    message.textContent = "Client profile not found.";
+  const { data: vendorProfile } = await supabaseClient
+    .from("vendors")
+    .select("*")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (vendorProfile) {
+    window.location.href = "vendor-dashboard.html";
     return;
   }
+
+  message.textContent = "Client profile not found.";
+  return;
+}
 
   clientProfileId = profile.id;
 
