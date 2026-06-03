@@ -182,21 +182,36 @@ async function loadClientDashboard() {
   }
 
   const { data: inquiries, error: inquiryError } = await supabaseClient
-    .from("vendor_inquiries")
+  .from("vendor_inquiries")
+  .select("*")
+  .eq("client_user_id", user.id)
+  .eq("client_deleted", false);
+
+let unreadCount = 0;
+
+if (!inquiryError && inquiries && inquiries.length > 0) {
+  const inquiryIds = inquiries.map(inquiry => inquiry.id);
+
+  const { data: unreadReplies } = await supabaseClient
+    .from("inquiry_replies")
     .select("*")
-    .eq("client_user_id", user.id)
-    .eq("client_deleted", false);
+    .in("inquiry_id", inquiryIds)
+    .eq("sender_type", "vendor")
+    .eq("read_by_client", false);
 
-  if (!inquiryError && inquiries) {
-    document.getElementById("messageCount").textContent = inquiries.length;
+  unreadCount = unreadReplies ? unreadReplies.length : 0;
+}
 
-    const badge = document.getElementById("messageBadge");
+document.getElementById("messageCount").textContent = unreadCount;
 
-    if (inquiries.length > 0) {
-      badge.style.display = "inline-block";
-      badge.textContent = inquiries.length;
-    }
-  }
+const badge = document.getElementById("messageBadge");
+
+if (unreadCount > 0) {
+  badge.style.display = "inline-block";
+  badge.textContent = unreadCount;
+} else {
+  badge.style.display = "none";
+}
 }
 
 document.getElementById("uploadProfileImageButton").addEventListener("click", async function() {
