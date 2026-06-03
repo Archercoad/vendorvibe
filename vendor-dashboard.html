@@ -313,9 +313,20 @@ async function loadVendorProfile() {
     .single();
 
   if (error || !data) {
-    message.textContent = "Vendor profile not found.";
+  const { data: clientProfile } = await supabaseClient
+    .from("client_profiles")
+    .select("*")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (clientProfile) {
+    window.location.href = "client-dashboard.html";
     return;
   }
+
+  message.textContent = "Vendor profile not found.";
+  return;
+}
 
   vendorId = data.id;
   isPremium = data.is_premium === true;
