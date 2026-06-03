@@ -88,6 +88,7 @@ let vendorId = null;
 let inquiries = [];
 let activeInquiry = null;
 let clientProfiles = {};
+let repliesByInquiry = {};
 
 const conversationList = document.getElementById("conversationList");
 const messageThread = document.getElementById("messageThread");
@@ -122,6 +123,7 @@ async function initMessages() {
   }
 
   vendorId = vendor.id;
+
   await loadInquiries();
 }
 
@@ -139,17 +141,28 @@ async function loadInquiries() {
   }
 
   inquiries = data || [];
-  const clientUserIds = inquiries
-  .map(inquiry => inquiry.client_user_id)
-  .filter(Boolean);
 
-if (clientUserIds.length > 0) {
+  await loadClientProfiles();
+  await loadRepliesForInquiries();
+
+  sortInquiriesByLatestMessage();
+  renderConversationList(inquiries);
+  updateUnreadBadge();
+}
+
+async function loadClientProfiles() {
+  clientProfiles = {};
+
+  const clientUserIds = inquiries
+    .map(inquiry => inquiry.client_user_id)
+    .filter(Boolean);
+
+  if (clientUserIds.length === 0) return;
+
   const { data: profiles } = await supabaseClient
     .from("client_profiles")
     .select("user_id, full_name, profile_image")
     .in("user_id", clientUserIds);
-
-  clientProfiles = {};
 
   if (profiles) {
     profiles.forEach(profile => {
@@ -157,8 +170,82 @@ if (clientUserIds.length > 0) {
     });
   }
 }
-  renderConversationList(inquiries);
-  updateUnreadBadge();
+
+async function loadRepliesForInquiries() {
+  repliesByInquiry = {};
+
+  const inquiryIds = inquiries.map(inquiry => inquiry.id);
+
+  if (inquiryIds.length === 0) return;
+
+  const { data: replies } = await supabaseClient
+    .from("inquiry_replies")
+    .select("*")
+    .in("inquiry_id", inquiryIds)
+    .order("created_at", { ascending: true });
+
+  if (replies) {
+    replies.forEach(reply => {
+      if (!repliesByInquiry[reply.inquiry_id]) {
+        repliesByInquiry[reply.inquiry_id] = [];
+      }
+
+      repliesByInquiry[reply.inquiry_id].push(reply);
+    });
+  }
+}
+
+function getLatestMessage(inquiry) {
+  const replies = repliesByInquiry[inquiry.id] || [];
+
+  if (replies.length > 0) {
+    const latestReply = replies[replies.length - 1];
+
+    return {
+      text: latestReply.message || "",
+      created_at: latestReply.created_at,
+      sender_type: latestReply.sender_type,
+      read_by_vendor: latestReply.read_by_vendor
+    };
+  }
+
+  return {
+    text: inquiry.message || "",
+    created_at: inquiry.created_at,
+    sender_type: "client",
+    read_by_vendor: inquiry.status !== "new"
+  };
+}
+
+function sortInquiriesByLatestMessage() {
+  inquiries.sort((a, b) => {
+    const latestA = new Date(getLatestMessage(a).created_at);
+    const latestB = new Date(getLatestMessage(b).created_at);
+
+    return latestB - latestA;
+  });
+}
+
+function hasUnreadForVendor(inquiry) {
+  if (inquiry.status === "new") return true;
+
+  const replies = repliesByInquiry[inquiry.id] || [];
+
+  return replies.some(reply =>
+    reply.sender_type === "client" &&
+    reply.read_by_vendor === false
+  );
+}
+
+function updateUnreadBadge() {
+  const unreadCount = inquiries.filter(inquiry => hasUnreadForVendor(inquiry)).length;
+
+  if (unreadCount > 0) {
+    messageBadge.style.display = "inline-block";
+    messageBadge.textContent = unreadCount;
+  } else {
+    messageBadge.style.display = "none";
+  }
 }
 
 function renderConversationList(list) {
@@ -171,28 +258,29 @@ function renderConversationList(list) {
 
   list.forEach(inquiry => {
     const isActive = activeInquiry && activeInquiry.id === inquiry.id;
-    const isUnread = inquiry.status === "new";
-    const time = formatTime(inquiry.created_at);
+    const isUnread = hasUnreadForVendor(inquiry);
+    const latest = getLatestMessage(inquiry);
+    const time = formatTime(latest.created_at);
+    const clientProfile = clientProfiles[inquiry.client_user_id];
+    const clientImage = clientProfile?.profile_image || "";
 
     conversationList.innerHTML += `
       <div class="conversation-item ${isActive ? "active" : ""}" onclick="openConversation('${inquiry.id}')">
         <div style="display:flex; gap:14px; width:100%;">
           <div class="conversation-avatar">
-  ${
-    clientProfiles[inquiry.client_user_id]?.profile_image
-      ? `<img class="avatar-image" src="${clientProfiles[inquiry.client_user_id].profile_image}">`
-      : ""
-  }
-</div>
+            ${clientImage ? `<img class="avatar-image" src="${clientImage}">` : ""}
+          </div>
 
           <div class="conversation-content">
             <div class="conversation-top">
-              <div class="conversation-name">${inquiry.client_name || "Unknown Client"}</div>
+              <div class="conversation-name">
+                ${isUnread ? "● " : ""}${inquiry.client_name || clientProfile?.full_name || "Unknown Client"}
+              </div>
               <div class="conversation-time">${time}</div>
             </div>
 
             <div class="conversation-preview">
-              ${inquiry.message || ""}
+              ${latest.sender_type === "vendor" ? "You: " : ""}${latest.text || ""}
             </div>
 
             <button
@@ -223,23 +311,46 @@ async function openConversation(inquiryId) {
 
   if (!activeInquiry) return;
 
-  activeName.textContent = activeInquiry.client_name || "Unknown Client";
   const clientProfile = clientProfiles[activeInquiry.client_user_id];
 
-document.querySelector(".main-avatar").innerHTML =
-  clientProfile?.profile_image
-    ? `<img class="avatar-image" src="${clientProfile.profile_image}">`
-    : "";
+  activeName.textContent =
+    activeInquiry.client_name || clientProfile?.full_name || "Unknown Client";
+
   activeSubtitle.textContent =
     `${activeInquiry.event_type || "Inquiry"} • ${activeInquiry.client_email || ""}`;
+
+  document.querySelector(".main-avatar").innerHTML =
+    clientProfile?.profile_image
+      ? `<img class="avatar-image" src="${clientProfile.profile_image}">`
+      : "";
 
   replyBox.disabled = false;
   sendButton.disabled = false;
 
-  await markAsRead(activeInquiry.id);
-  await loadConversationThread(activeInquiry);
+  await markInquiryAndClientRepliesRead(activeInquiry.id);
+  await loadInquiries();
 
-  renderConversationList(inquiries);
+  activeInquiry = inquiries.find(i => i.id === inquiryId);
+
+  if (activeInquiry) {
+    await loadConversationThread(activeInquiry);
+    renderConversationList(inquiries);
+  }
+}
+
+async function markInquiryAndClientRepliesRead(inquiryId) {
+  await supabaseClient
+    .from("vendor_inquiries")
+    .update({ status: "read" })
+    .eq("id", inquiryId)
+    .eq("vendor_id", vendorId);
+
+  await supabaseClient
+    .from("inquiry_replies")
+    .update({ read_by_vendor: true })
+    .eq("inquiry_id", inquiryId)
+    .eq("sender_type", "client")
+    .eq("read_by_vendor", false);
 }
 
 async function loadConversationThread(inquiry) {
@@ -254,29 +365,17 @@ async function loadConversationThread(inquiry) {
     </div>
   `;
 
-  const { data: replies, error } = await supabaseClient
-    .from("inquiry_replies")
-    .select("*")
-    .eq("inquiry_id", inquiry.id)
-    .order("created_at", { ascending: true });
-
-  if (error) {
-    messageThread.innerHTML += `
-      <div class="app-card">
-        Could not load replies: ${error.message}
-      </div>
-    `;
-    return;
-  }
+  const replies = repliesByInquiry[inquiry.id] || [];
 
   replies.forEach(reply => {
     const bubbleClass = reply.sender_type === "vendor" ? "vendor" : "client";
+    const senderLabel = reply.sender_type === "vendor" ? "You" : "Client";
 
     messageThread.innerHTML += `
       <div class="message-bubble ${bubbleClass}">
         ${reply.message || ""}
         <div class="message-time">
-          ${reply.sender_type || "message"} • ${new Date(reply.created_at).toLocaleString()}
+          ${senderLabel} • ${new Date(reply.created_at).toLocaleString()}
         </div>
       </div>
     `;
@@ -285,22 +384,40 @@ async function loadConversationThread(inquiry) {
   messageThread.scrollTop = messageThread.scrollHeight;
 }
 
-async function markAsRead(inquiryId) {
-  const inquiry = inquiries.find(i => i.id === inquiryId);
+sendButton.addEventListener("click", async function() {
+  if (!activeInquiry) return;
 
-  if (!inquiry || inquiry.status !== "new") return;
+  const text = replyBox.value.trim();
+
+  if (!text) return;
 
   const { error } = await supabaseClient
-    .from("vendor_inquiries")
-    .update({ status: "read" })
-    .eq("id", inquiryId)
-    .eq("vendor_id", vendorId);
+    .from("inquiry_replies")
+    .insert([
+      {
+        inquiry_id: activeInquiry.id,
+        sender_type: "vendor",
+        message: text,
+        read_by_client: false,
+        read_by_vendor: true
+      }
+    ]);
 
-  if (!error) {
-    inquiry.status = "read";
-    updateUnreadBadge();
+  if (error) {
+    alert("Reply could not be sent: " + error.message);
+    return;
   }
-}
+
+  replyBox.value = "";
+
+  await loadInquiries();
+  activeInquiry = inquiries.find(i => i.id === activeInquiry.id);
+
+  if (activeInquiry) {
+    await loadConversationThread(activeInquiry);
+    renderConversationList(inquiries);
+  }
+});
 
 async function deleteConversation(event, inquiryId) {
   event.stopPropagation();
@@ -323,6 +440,7 @@ async function deleteConversation(event, inquiryId) {
     activeInquiry = null;
     activeName.textContent = "Select a conversation";
     activeSubtitle.textContent = "Your messages will appear here.";
+    document.querySelector(".main-avatar").innerHTML = "";
 
     messageThread.innerHTML = `
       <div class="app-card">
@@ -338,32 +456,6 @@ async function deleteConversation(event, inquiryId) {
   await loadInquiries();
 }
 
-sendButton.addEventListener("click", async function() {
-  if (!activeInquiry) return;
-
-  const text = replyBox.value.trim();
-
-  if (!text) return;
-
-  const { error } = await supabaseClient
-    .from("inquiry_replies")
-    .insert([
-      {
-        inquiry_id: activeInquiry.id,
-        sender_type: "vendor",
-        message: text
-      }
-    ]);
-
-  if (error) {
-    alert("Reply could not be sent: " + error.message);
-    return;
-  }
-
-  replyBox.value = "";
-  await loadConversationThread(activeInquiry);
-});
-
 document.getElementById("sidebarSearch").addEventListener("input", function() {
   filterConversations(this.value);
 });
@@ -375,25 +467,20 @@ document.getElementById("searchInput").addEventListener("input", function() {
 function filterConversations(searchValue) {
   const search = searchValue.toLowerCase();
 
-  const filtered = inquiries.filter(inquiry =>
-    (inquiry.client_name || "").toLowerCase().includes(search) ||
-    (inquiry.client_email || "").toLowerCase().includes(search) ||
-    (inquiry.message || "").toLowerCase().includes(search) ||
-    (inquiry.event_type || "").toLowerCase().includes(search)
-  );
+  const filtered = inquiries.filter(inquiry => {
+    const clientProfile = clientProfiles[inquiry.client_user_id];
+    const latest = getLatestMessage(inquiry);
+
+    return (
+      (inquiry.client_name || "").toLowerCase().includes(search) ||
+      (clientProfile?.full_name || "").toLowerCase().includes(search) ||
+      (inquiry.client_email || "").toLowerCase().includes(search) ||
+      (latest.text || "").toLowerCase().includes(search) ||
+      (inquiry.event_type || "").toLowerCase().includes(search)
+    );
+  });
 
   renderConversationList(filtered);
-}
-
-function updateUnreadBadge() {
-  const unreadCount = inquiries.filter(i => i.status === "new").length;
-
-  if (unreadCount > 0) {
-    messageBadge.style.display = "inline-block";
-    messageBadge.textContent = unreadCount;
-  } else {
-    messageBadge.style.display = "none";
-  }
 }
 
 document.getElementById("logoutLink").addEventListener("click", async function(event) {
