@@ -22,6 +22,29 @@
       grid-column: 1 / -1;
     }
 
+    label {
+      display: block;
+      margin-top: 16px;
+      margin-bottom: 7px;
+      font-weight: bold;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      padding: 13px;
+      border-radius: 8px;
+      border: 1px solid #ccdbe2;
+      box-sizing: border-box;
+      font-size: 15px;
+    }
+
+    textarea {
+      min-height: 90px;
+      resize: vertical;
+    }
+
     .dashboard-stat {
       font-size: 28px;
       font-weight: bold;
@@ -48,6 +71,35 @@
       border-radius: 50%;
       display: block;
       background-color: #EBFCFF;
+    }
+
+    .profile-summary {
+      display: flex;
+      gap: 24px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .profile-summary img {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      object-fit: cover;
+      background-color: #EBFCFF;
+    }
+
+    .profile-summary h2 {
+      margin-bottom: 8px;
+    }
+
+    .vibe-pill {
+      display: inline-block;
+      margin: 5px 6px 0 0;
+      padding: 7px 11px;
+      border-radius: 20px;
+      background-color: #EBFCFF;
+      border: 1px solid #ccdbe2;
+      font-size: 14px;
     }
 
     .message {
@@ -97,6 +149,74 @@
 
   <div class="dashboard-grid">
 
+    <div class="app-card full-width">
+      <div class="profile-summary">
+        <img id="summaryProfileImage" src="">
+        <div>
+          <h2 id="summaryName">Your Event Profile</h2>
+          <p id="summaryDetails">Add your event details to personalize your VendorVibe experience.</p>
+          <div id="summaryVibes"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="app-card full-width">
+      <h2>Edit Event Profile</h2>
+
+      <form id="clientProfileForm">
+        <label>Full Name</label>
+        <input type="text" id="fullName">
+
+        <label>Event Name</label>
+        <input type="text" id="eventName" placeholder="Example: Sarah & Michael's Wedding">
+
+        <label>Event Type</label>
+        <select id="eventType">
+          <option value="">Select Event Type</option>
+          <option>Wedding</option>
+          <option>Corporate Event</option>
+          <option>Birthday Party</option>
+          <option>Concert</option>
+          <option>Festival</option>
+          <option>Private Event</option>
+          <option>Community Event</option>
+          <option>Other</option>
+        </select>
+
+        <label>Event Date</label>
+        <input type="date" id="eventDate">
+
+        <label>Event City</label>
+        <input type="text" id="eventCity">
+
+        <label>Budget Range</label>
+        <select id="budgetRange">
+          <option value="">Select Budget Range</option>
+          <option>Under $5,000</option>
+          <option>$5,000-$10,000</option>
+          <option>$10,000-$25,000</option>
+          <option>$25,000-$50,000</option>
+          <option>$50,000+</option>
+          <option>Not sure yet</option>
+        </select>
+
+        <label>Planning Stage</label>
+        <select id="planningStage">
+          <option>Just Exploring</option>
+          <option>Building Inspiration</option>
+          <option>Researching Vendors</option>
+          <option>Actively Booking Vendors</option>
+          <option>Finalizing Details</option>
+          <option>Event Ready</option>
+        </select>
+
+        <label>Vibe Tags</label>
+        <textarea id="vibeTags" placeholder="Example: Romantic, Elegant, Garden Party"></textarea>
+
+        <button type="submit" class="primary-button">Save Event Profile</button>
+      </form>
+    </div>
+
     <div class="app-card">
       <h2>Profile Photo</h2>
       <p>Upload a photo so vendors can recognize your profile in messages.</p>
@@ -111,7 +231,7 @@
       <h2>Messages</h2>
       <p>You have:</p>
       <div class="dashboard-stat" id="messageCount">0</div>
-      <p>active vendor conversation(s)</p>
+      <p>unread message(s)</p>
 
       <a href="client-messages.html">
         <button class="primary-button">Open Messages</button>
@@ -129,9 +249,11 @@
       </a>
     </div>
 
-    <div class="app-card full-width">
-      <h2>Event Planning Workspace</h2>
-      <p>This area will eventually help clients organize vendors by event, track inquiries, compare pricing, and manage bookings.</p>
+    <div class="app-card">
+      <h2>Vibe Quiz</h2>
+      <p>Coming soon: answer a few questions so VendorVibe can recommend vendors that match your event style.</p>
+
+      <button class="primary-button" disabled>Coming Soon</button>
     </div>
 
   </div>
@@ -148,6 +270,7 @@ const supabaseClient = window.supabase.createClient(
 
 let currentUserId = null;
 let clientProfileId = null;
+let currentProfile = null;
 
 const message = document.getElementById("message");
 
@@ -168,62 +291,158 @@ async function loadClientDashboard() {
     .from("client_profiles")
     .select("*")
     .eq("user_id", user.id)
-    .single();
-
-  if (profileError || !profile) {
-  const { data: vendorProfile } = await supabaseClient
-    .from("vendors")
-    .select("*")
-    .eq("user_id", user.id)
     .maybeSingle();
 
-  if (vendorProfile) {
-    window.location.href = "vendor-dashboard.html";
+  if (profileError || !profile) {
+    const { data: vendorProfile } = await supabaseClient
+      .from("vendors")
+      .select("*")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (vendorProfile) {
+      window.location.href = "vendor-dashboard.html";
+      return;
+    }
+
+    message.textContent = "Client profile not found.";
     return;
   }
 
-  message.textContent = "Client profile not found.";
-  return;
+  currentProfile = profile;
+  clientProfileId = profile.id;
+
+  populateProfileFields(profile);
+  updateProfileSummary(profile);
+  await loadUnreadCount(user.id);
 }
 
-  clientProfileId = profile.id;
+function populateProfileFields(profile) {
+  document.getElementById("fullName").value = profile.full_name || "";
+  document.getElementById("eventName").value = profile.event_name || "";
+  document.getElementById("eventType").value = profile.event_type || "";
+  document.getElementById("eventDate").value = profile.event_date || "";
+  document.getElementById("eventCity").value = profile.event_city || "";
+  document.getElementById("budgetRange").value = profile.budget_range || "";
+  document.getElementById("planningStage").value = profile.planning_stage || "Just Exploring";
+  document.getElementById("vibeTags").value = profile.vibe_tags || "";
 
   if (profile.profile_image) {
     document.getElementById("profileImagePreview").src = profile.profile_image;
+    document.getElementById("summaryProfileImage").src = profile.profile_image;
+  }
+}
+
+function updateProfileSummary(profile) {
+  const name = profile.full_name || "Your Event Profile";
+  const eventName = profile.event_name || "";
+  const eventType = profile.event_type || "";
+  const eventDate = profile.event_date ? formatReadableDate(profile.event_date) : "";
+  const eventCity = profile.event_city || "";
+  const budgetRange = profile.budget_range || "";
+  const planningStage = profile.planning_stage || "";
+
+  document.getElementById("summaryName").textContent = name;
+
+  const detailParts = [];
+
+  if (eventName) detailParts.push(eventName);
+  if (eventType) detailParts.push(eventType);
+  if (eventDate) detailParts.push(eventDate);
+  if (eventCity) detailParts.push(eventCity);
+  if (budgetRange) detailParts.push(budgetRange);
+  if (planningStage) detailParts.push(planningStage);
+
+  document.getElementById("summaryDetails").textContent =
+    detailParts.length > 0
+      ? detailParts.join(" • ")
+      : "Add your event details to personalize your VendorVibe experience.";
+
+  const vibeContainer = document.getElementById("summaryVibes");
+  vibeContainer.innerHTML = "";
+
+  if (profile.vibe_tags) {
+    const tags = profile.vibe_tags
+      .split(",")
+      .map(tag => tag.trim())
+      .filter(Boolean);
+
+    tags.forEach(tag => {
+      vibeContainer.innerHTML += `<span class="vibe-pill">${tag}</span>`;
+    });
+  }
+}
+
+async function loadUnreadCount(userId) {
+  const { data: inquiries, error: inquiryError } = await supabaseClient
+    .from("vendor_inquiries")
+    .select("*")
+    .eq("client_user_id", userId)
+    .eq("client_deleted", false);
+
+  let unreadCount = 0;
+
+  if (!inquiryError && inquiries && inquiries.length > 0) {
+    const inquiryIds = inquiries.map(inquiry => inquiry.id);
+
+    const { data: unreadReplies } = await supabaseClient
+      .from("inquiry_replies")
+      .select("*")
+      .in("inquiry_id", inquiryIds)
+      .eq("sender_type", "vendor")
+      .eq("read_by_client", false);
+
+    unreadCount = unreadReplies ? unreadReplies.length : 0;
   }
 
-  const { data: inquiries, error: inquiryError } = await supabaseClient
-  .from("vendor_inquiries")
-  .select("*")
-  .eq("client_user_id", user.id)
-  .eq("client_deleted", false);
+  document.getElementById("messageCount").textContent = unreadCount;
 
-let unreadCount = 0;
+  const badge = document.getElementById("messageBadge");
 
-if (!inquiryError && inquiries && inquiries.length > 0) {
-  const inquiryIds = inquiries.map(inquiry => inquiry.id);
-
-  const { data: unreadReplies } = await supabaseClient
-    .from("inquiry_replies")
-    .select("*")
-    .in("inquiry_id", inquiryIds)
-    .eq("sender_type", "vendor")
-    .eq("read_by_client", false);
-
-  unreadCount = unreadReplies ? unreadReplies.length : 0;
+  if (unreadCount > 0) {
+    badge.style.display = "inline-block";
+    badge.textContent = unreadCount;
+  } else {
+    badge.style.display = "none";
+  }
 }
 
-document.getElementById("messageCount").textContent = unreadCount;
+document.getElementById("clientProfileForm").addEventListener("submit", async function(event) {
+  event.preventDefault();
 
-const badge = document.getElementById("messageBadge");
+  if (!clientProfileId || !currentUserId) {
+    message.textContent = "Client profile not loaded yet.";
+    return;
+  }
 
-if (unreadCount > 0) {
-  badge.style.display = "inline-block";
-  badge.textContent = unreadCount;
-} else {
-  badge.style.display = "none";
-}
-}
+  const updates = {
+    full_name: document.getElementById("fullName").value.trim(),
+    event_name: document.getElementById("eventName").value.trim(),
+    event_type: document.getElementById("eventType").value,
+    event_date: document.getElementById("eventDate").value || null,
+    event_city: document.getElementById("eventCity").value.trim(),
+    budget_range: document.getElementById("budgetRange").value,
+    planning_stage: document.getElementById("planningStage").value,
+    vibe_tags: document.getElementById("vibeTags").value.trim()
+  };
+
+  const { data, error } = await supabaseClient
+    .from("client_profiles")
+    .update(updates)
+    .eq("id", clientProfileId)
+    .eq("user_id", currentUserId)
+    .select()
+    .single();
+
+  if (error) {
+    message.textContent = "Profile update failed: " + error.message;
+    return;
+  }
+
+  currentProfile = data;
+  updateProfileSummary(data);
+  message.textContent = "Event profile updated successfully!";
+});
 
 document.getElementById("uploadProfileImageButton").addEventListener("click", async function() {
   const fileInput = document.getElementById("profileImageFile");
@@ -264,18 +483,22 @@ document.getElementById("uploadProfileImageButton").addEventListener("click", as
 
   const publicUrl = publicUrlData.publicUrl;
 
-  const { error: updateError } = await supabaseClient
+  const { data, error: updateError } = await supabaseClient
     .from("client_profiles")
     .update({ profile_image: publicUrl })
     .eq("id", clientProfileId)
-    .eq("user_id", currentUserId);
+    .eq("user_id", currentUserId)
+    .select()
+    .single();
 
   if (updateError) {
     message.textContent = "Photo uploaded, but profile update failed: " + updateError.message;
     return;
   }
 
+  currentProfile = data;
   document.getElementById("profileImagePreview").src = publicUrl;
+  document.getElementById("summaryProfileImage").src = publicUrl;
   fileInput.value = "";
   message.textContent = "Profile photo updated successfully!";
 });
@@ -285,6 +508,16 @@ document.getElementById("logoutLink").addEventListener("click", async function(e
   await supabaseClient.auth.signOut();
   window.location.href = "login.html";
 });
+
+function formatReadableDate(dateString) {
+  const date = new Date(dateString + "T00:00:00");
+
+  return date.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "long",
+    day: "numeric"
+  });
+}
 
 loadClientDashboard();
 </script>
