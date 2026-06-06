@@ -263,6 +263,11 @@ async function loadVendors() {
     searchInput.addEventListener("input", filterVendors);
     categoryFilter.addEventListener("change", filterVendors);
 
+    document.getElementById("logoutLink").addEventListener("click", async function(event) {
+  event.preventDefault();
+  await supabaseClient.auth.signOut();
+  window.location.href = "login.html";
+});
     loadVendors();
   </script>
 
