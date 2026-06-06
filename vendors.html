@@ -81,24 +81,24 @@
     }
 
     .vendor-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
-}
+      transform: translateY(-4px);
+      box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
+    }
 
-.vendor-card.premium {
-  border: 3px solid #1A0C6A;
-}
+    .vendor-card.premium {
+      border: 3px solid #1A0C6A;
+    }
 
-.premium-badge {
-  display: inline-block;
-  margin-bottom: 10px;
-  padding: 6px 10px;
-  background-color: #1A0C6A;
-  color: white;
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: bold;
-}
+    .premium-badge {
+      display: inline-block;
+      margin-bottom: 10px;
+      padding: 6px 10px;
+      background-color: #1A0C6A;
+      color: white;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: bold;
+    }
 
     .vendor-card img {
       width: 100%;
@@ -134,6 +134,22 @@
       display: inline-block;
     }
 
+    .save-vendor-button {
+      margin-top: 12px;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background-color: #1A0C6A;
+      color: white;
+      width: 100%;
+      font-weight: bold;
+    }
+
+    .save-vendor-button.saved {
+      background-color: #e04a6a;
+    }
+
     .footer {
       text-align: center;
       padding: 30px 20px;
@@ -146,16 +162,16 @@
 <body>
 
   <nav class="navbar">
-  <div class="logo">VendorVibe</div>
+    <div class="logo">VendorVibe</div>
 
-  <div class="nav-links" id="navLinks">
-    <a href="client-dashboard.html">Dashboard</a>
-    <a href="vendors.html">Find Vendors</a>
-    <a href="client-messages.html">Messages</a>
-    <a href="#">Saved Vendors</a>
-    <a href="#" id="logoutLink">Logout</a>
-  </div>
-</nav>
+    <div class="nav-links" id="navLinks">
+      <a href="client-dashboard.html">Dashboard</a>
+      <a href="vendors.html">Find Vendors</a>
+      <a href="client-messages.html">Messages</a>
+      <a href="#">Saved Vendors</a>
+      <a href="#" id="logoutLink">Logout</a>
+    </div>
+  </nav>
 
   <section class="page-header">
     <h1>Find Vendors</h1>
@@ -164,6 +180,7 @@
 
   <section class="filter-bar">
     <input type="text" id="searchInput" placeholder="Search vendors or services">
+
     <select id="categoryFilter">
       <option value="all">All Categories</option>
       <option value="Event Planning">Event Planning</option>
@@ -194,61 +211,147 @@
     const categoryFilter = document.getElementById("categoryFilter");
 
     let allVendors = [];
+    let currentUser = null;
+    let savedVendorIds = [];
 
     function createVendorId(name) {
       return name.toLowerCase().replaceAll(" ", "-");
     }
 
+    async function loadSavedVendors() {
+      const {
+        data: { user }
+      } = await supabaseClient.auth.getUser();
+
+      if (!user) return;
+
+      currentUser = user;
+
+      const { data, error } = await supabaseClient
+        .from("saved_vendors")
+        .select("vendor_id")
+        .eq("client_user_id", user.id);
+
+      if (error) {
+        console.log("Saved vendors load error:", error);
+        return;
+      }
+
+      savedVendorIds = data
+        ? data.map(item => item.vendor_id)
+        : [];
+    }
+
     function renderVendors(vendors) {
       vendorGrid.innerHTML = "";
 
+      if (!vendors.length) {
+        vendorGrid.innerHTML = "<p>No vendors found.</p>";
+        return;
+      }
+
       vendors.forEach(vendor => {
-        const vendorId = createVendorId(vendor.name);
+        const vendorSlug = createVendorId(vendor.name);
+        const isSaved = savedVendorIds.includes(vendor.id);
 
         const card = `
-  <a href="vendor.html?id=${vendorId}" class="vendor-link">
-    <div class="vendor-card ${vendor.is_premium ? 'premium' : ''}">
-      <img src="${vendor.image || 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622'}" alt="${vendor.name}">
-      <div class="vendor-card-content">
-        ${vendor.is_premium ? '<div class="premium-badge">Premium Vendor</div>' : ''}
-        <h2>${vendor.name}</h2>
-        <p>${vendor.description || ''}</p>
-        <div class="tag">${vendor.category || 'Vendor'}</div>
-      </div>
-    </div>
-  </a>
-`;
+          <div class="vendor-link">
+            <div class="vendor-card ${vendor.is_premium ? 'premium' : ''}">
 
-vendorGrid.innerHTML += card;
-});
-}
+              <a href="vendor.html?id=${vendorSlug}" style="text-decoration:none;color:inherit;">
+                <img src="${vendor.image || 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622'}" alt="${vendor.name}">
 
-function filterVendors() {
-  const searchText = searchInput.value.toLowerCase();
-  const selectedCategory = categoryFilter.value;
+                <div class="vendor-card-content">
+                  ${vendor.is_premium ? '<div class="premium-badge">Premium Vendor</div>' : ''}
+                  <h2>${vendor.name}</h2>
+                  <p>${vendor.description || ''}</p>
+                  <div class="tag">${vendor.category || 'Vendor'}</div>
+                </div>
+              </a>
 
-  const filtered = allVendors.filter(vendor => {
-    const matchesSearch =
-      vendor.name.toLowerCase().includes(searchText) ||
-      vendor.description.toLowerCase().includes(searchText) ||
-      vendor.category.toLowerCase().includes(searchText);
+              <div style="padding:0 22px 22px;">
+                <button
+                  class="save-vendor-button ${isSaved ? 'saved' : ''}"
+                  onclick="toggleSaveVendor('${vendor.id}')">
+                  ${isSaved ? '❤️ Saved' : '🤍 Save Vendor'}
+                </button>
+              </div>
 
-    const matchesCategory =
-      selectedCategory === "all" || vendor.category === selectedCategory;
+            </div>
+          </div>
+        `;
 
-    return matchesSearch && matchesCategory;
-  });
+        vendorGrid.innerHTML += card;
+      });
+    }
 
-  renderVendors(filtered);
-}
+    async function toggleSaveVendor(vendorId) {
+      if (!currentUser) {
+        alert("Please log in as a client to save vendors.");
+        return;
+      }
 
-async function loadVendors() {
-  const { data, error } = await supabaseClient
-    .from("vendors")
-    .select("*")
-    .eq("status", "approved")
-    .order("is_premium", { ascending: false })
-    .order("created_at", { ascending: false });
+      const alreadySaved = savedVendorIds.includes(vendorId);
+
+      if (alreadySaved) {
+        const { error } = await supabaseClient
+          .from("saved_vendors")
+          .delete()
+          .eq("client_user_id", currentUser.id)
+          .eq("vendor_id", vendorId);
+
+        if (error) {
+          alert("Could not remove saved vendor: " + error.message);
+          return;
+        }
+      } else {
+        const { error } = await supabaseClient
+          .from("saved_vendors")
+          .insert([
+            {
+              client_user_id: currentUser.id,
+              vendor_id: vendorId
+            }
+          ]);
+
+        if (error) {
+          alert("Could not save vendor: " + error.message);
+          return;
+        }
+      }
+
+      await loadSavedVendors();
+      renderVendors(allVendors);
+    }
+
+    function filterVendors() {
+      const searchText = searchInput.value.toLowerCase();
+      const selectedCategory = categoryFilter.value;
+
+      const filtered = allVendors.filter(vendor => {
+        const matchesSearch =
+          (vendor.name || "").toLowerCase().includes(searchText) ||
+          (vendor.description || "").toLowerCase().includes(searchText) ||
+          (vendor.category || "").toLowerCase().includes(searchText);
+
+        const matchesCategory =
+          selectedCategory === "all" || vendor.category === selectedCategory;
+
+        return matchesSearch && matchesCategory;
+      });
+
+      renderVendors(filtered);
+    }
+
+    async function loadVendors() {
+      await loadSavedVendors();
+
+      const { data, error } = await supabaseClient
+        .from("vendors")
+        .select("*")
+        .eq("status", "approved")
+        .order("is_premium", { ascending: false })
+        .order("created_at", { ascending: false });
 
       if (error) {
         vendorGrid.innerHTML = "<p>Something went wrong loading vendors.</p>";
@@ -256,7 +359,7 @@ async function loadVendors() {
         return;
       }
 
-      allVendors = data;
+      allVendors = data || [];
       renderVendors(allVendors);
     }
 
@@ -264,10 +367,11 @@ async function loadVendors() {
     categoryFilter.addEventListener("change", filterVendors);
 
     document.getElementById("logoutLink").addEventListener("click", async function(event) {
-  event.preventDefault();
-  await supabaseClient.auth.signOut();
-  window.location.href = "login.html";
-});
+      event.preventDefault();
+      await supabaseClient.auth.signOut();
+      window.location.href = "login.html";
+    });
+
     loadVendors();
   </script>
 
